@@ -4,7 +4,8 @@ import { loadEphemeris, makeSite, azel, subPoint, R_SUN, R_EARTH, R_MOON } from 
 import { horizonAt, discVisible, offsetLL } from './terrain.js';
 import { STATIONS, MASK_DEG, stationsInView } from './earthside.js';
 import { createRelief } from './relief3d.js';
-import { getKey, setKey, aiParse, aiExplain } from './ai.js';
+import { prepSite } from './hero.js';
+import { getKey, setKey, aiMode, aiParse, aiExplain } from './ai.js';
 import { buildSeries, windowMetrics, verdict, calendar, nextEvent, simulateEnergy, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
 
 const $ = (q) => document.querySelector(q);
@@ -52,11 +53,6 @@ function cal(s) {
   const S = series(s), key = st.dur + JSON.stringify(st.rules);
   if (S._calKey !== key) { S._cal = calendar({ ...S, n: SPAN_DAYS * 24 + N() }, N(), 24, st.rules); S._calKey = key; }
   return S._cal;
-}
-function prepSite(s) {
-  s.hzo = { el: s.hzo ? s.hzo.el : Float32Array.from(s.hz, v => v / 100), ground: s.ground, mast: s.mast };
-  s.geom = makeSite(s.lat, s.lon, (s.ground + s.mast) / 1000);
-  return s;
 }
 
 // ---------- site list ----------
@@ -567,84 +563,12 @@ function showTour(k) {
   clearTimeout(showTour.t); if (step.after) showTour.t = setTimeout(() => { if (tourK === k) step.after(); }, 900);
 }
 function endTour() { tourK = -1; clearTimeout(showTour.t); $('#tour').hidden = true; document.querySelectorAll('.spot').forEach(e => e.classList.remove('spot')); }
-$('#tourBtn').addEventListener('click', () => showTour(0)); $('#heroTour').addEventListener('click', () => showTour(0));
+$('#tourBtn').addEventListener('click', () => showTour(0));
 $('#tourNext').addEventListener('click', () => tourK >= TOUR.length - 1 ? endTour() : showTour(tourK + 1));
 $('#tourBack').addEventListener('click', () => tourK > 0 && showTour(tourK - 1)); $('#tourClose').addEventListener('click', endTour);
 addEventListener('keydown', (e) => { if (tourK < 0) return; if (e.key === 'Escape') endTour(); else if (e.key === 'ArrowRight') $('#tourNext').click(); else if (e.key === 'ArrowLeft') $('#tourBack').click(); });
 
 // ---------- live hero: the real sky over the ridge, this minute ----------
-function startHero() {
-  const cv = $('#heroCv'), hero = $('#heroWin'), src = site('ridge') || sites[0], hz = src.hzo, o = {};
-  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const stars = Array.from({ length: 220 }, () => ({ x: rnd(), y: rnd() * 0.72, a: 0.2 + rnd() * 0.6, r: rnd() < 0.12 ? 2 : 1 }));
-  let off = 0, drag = null, G = null;
-  const clampT = (t) => Math.max(eph.msMin + DAY, Math.min(eph.msMax - 240 * DAY, t));
-  const body = (b, t) => { azel(eph, b, t, src.geom, o); const rad = Math.asin((b ? R_EARTH : R_SUN) / o.dist) * R2D; return { az: o.az, el: o.el, rad, vis: discVisible(hz, o.az, o.el, rad) }; };
-  const compute = (t) => {
-    const sun = body(0, t), ear = body(1, t), up = sun.vis >= LIT_MIN, path = []; let ev = null;
-    for (let k = 1; k <= 24 * 200 && (ev == null || k <= 24 * 30); k++) {
-      azel(eph, 0, t + k * HOUR, src.geom, o);
-      if (k <= 24 * 30 && k % 3 === 0) path.push(o.az, o.el);
-      if (ev == null && (discVisible(hz, o.az, o.el, sun.rad) >= LIT_MIN) !== up) ev = k;
-    }
-    return { t, sun, ear, up, ev, path };
-  };
-  const sgn = (v) => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2);
-  $('#liveSite').textContent = `${Math.abs(src.lat).toFixed(2)}°${src.lat < 0 ? 'S' : 'N'} ${Math.abs(src.lon).toFixed(2)}°${src.lon < 0 ? 'W' : 'E'}`;
-  const draw = () => {
-    const t = clampT(Date.now() + off); if (!G || Math.abs(G.t - t) > 30e3) G = compute(t);
-    const dpr = Math.min(2, devicePixelRatio || 1), w = hero.clientWidth, h = hero.clientHeight;
-    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
-    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const base = h - 150, sc = 30, X = (az) => az / 360 * w, Y = (el) => base - el * sc;
-    c.fillStyle = '#0b0b0a'; c.fillRect(0, 0, w, h);
-    for (const s of stars) { c.fillStyle = `rgba(233,230,220,${s.a})`; c.fillRect(Math.round(s.x * w), Math.round(s.y * h), s.r, s.r); }
-    c.font = 'condensed 11px "Martian Mono",monospace'; c.textAlign = 'right';
-    for (const e of [0, 2, 4, 6]) { const y = Math.round(Y(e)); c.fillStyle = e ? '#ffffff16' : '#ffffff40'; c.fillRect(0, y, w, 1); c.fillStyle = '#aaa69a'; c.fillText((e ? '+' : '') + e + '°', w - 10, y - 4); }
-    // where the Sun will go over the next 30 days
-    c.fillStyle = '#ffc857'; for (let k = 0; k < G.path.length; k += 2) c.fillRect(X(G.path[k]) - 1, Y(G.path[k + 1]) - 1, 2, 2);
-    const sx = X(G.sun.az), sy = Y(G.sun.el), sr = Math.max(5, G.sun.rad * sc);
-    const gl = c.createRadialGradient(sx, sy, sr, sx, sy, sr * 9); gl.addColorStop(0, '#ffc85770'); gl.addColorStop(1, '#ffc85700'); c.fillStyle = gl; c.beginPath(); c.arc(sx, sy, sr * 9, 0, 7); c.fill();
-    c.fillStyle = '#fff3cf'; c.beginPath(); c.arc(sx, sy, sr, 0, 7); c.fill();
-    // Earth, with the phase it shows from the Moon
-    const ex = X(G.ear.az), ey = Y(G.ear.el), er = Math.max(9, G.ear.rad * sc);
-    const dAz = (G.sun.az - G.ear.az + 540) % 360 - 180, dEl = G.sun.el - G.ear.el;
-    const lit = (1 - (Math.sin(G.sun.el * D2R) * Math.sin(G.ear.el * D2R) + Math.cos(G.sun.el * D2R) * Math.cos(G.ear.el * D2R) * Math.cos(dAz * D2R))) / 2;
-    c.fillStyle = '#10233f'; c.beginPath(); c.arc(ex, ey, er, 0, 7); c.fill();
-    c.save(); c.translate(ex, ey); c.rotate(Math.atan2(-dEl, dAz)); c.fillStyle = '#58a6ff'; c.beginPath(); c.arc(0, 0, er, -Math.PI / 2, Math.PI / 2, false); c.ellipse(0, 0, Math.max(0.01, er * Math.abs(1 - 2 * lit)), er, 0, Math.PI / 2, -Math.PI / 2, lit < 0.5); c.fill(); c.restore();
-    // terrain skyline
-    c.beginPath(); c.moveTo(0, h); for (let x = 0; x <= w; x += 2) c.lineTo(x, Y(horizonAt(hz, x / w * 360))); c.lineTo(w, h); c.closePath();
-    const tg = c.createLinearGradient(0, base - 3 * sc, 0, h), b = G.up ? 1 : 0.45; tg.addColorStop(0, `rgb(${150 * b | 0},${147 * b | 0},${138 * b | 0})`); tg.addColorStop(1, '#1c1b19'); c.fillStyle = tg; c.fill();
-    c.strokeStyle = G.up ? '#efece4' : '#6b6962'; c.lineWidth = 1.25; c.beginPath(); for (let x = 0; x <= w; x += 2) { const y = Y(horizonAt(hz, x / w * 360)); x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
-    c.setLineDash([3, 3]); c.lineWidth = 1;
-    if (!G.up) { c.strokeStyle = '#ffc857'; c.beginPath(); c.arc(sx, sy, sr + 3, 0, 7); c.stroke(); }
-    const earthUp = G.ear.vis >= COMM_MIN; if (!earthUp) { c.strokeStyle = '#58a6ff'; c.beginPath(); c.arc(ex, ey, er, 0, 7); c.stroke(); }
-    c.setLineDash([]);
-    c.font = '600 13px Archivo,sans-serif';
-    const label = (txt, x, y, r, az, col) => { const right = x > w - 200, ly = Math.min(y - r - 6, ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map(q => Y(horizonAt(hz, az + (right ? -1 : 1) * q * 5)) - 10)); c.textAlign = right ? 'right' : 'left'; c.fillStyle = col; c.fillText(txt, x + (right ? -r - 8 : r + 8), ly); };
-    label(G.up ? 'Sun' : 'Sun, behind terrain', sx, sy, sr, G.sun.az, '#ffc857'); label(earthUp ? 'Earth' : 'Earth, behind terrain', ex, ey, er, G.ear.az, '#8cc4ff');
-    c.fillStyle = '#0b0b0a'; c.fillRect(0, h - 46, w, 46); c.fillStyle = '#ffffff40'; c.fillRect(0, h - 46, w, 1);
-    c.font = 'condensed 11px "Martian Mono",monospace'; c.fillStyle = '#aaa69a'; c.textAlign = 'center';
-    const names = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']; for (let a = 0; a <= 8; a++) c.fillText(names[a], Math.max(12, Math.min(w - 12, X(a * 45))), h - 30);
-    c.textAlign = 'left'; c.font = '12px Archivo,sans-serif'; const stretch = (sc / (w / 360)).toFixed(0);
-    c.fillText(w < 720 ? `LOLA skyline. Elevation stretched ${stretch}×.` : `Skyline at ${src.name}, from NASA LRO LOLA. Yellow dots: the Sun over the next 30 days. Elevation stretched ${stretch}× relative to azimuth.`, Math.max(12, parseFloat(getComputedStyle(hero).paddingLeft)), h - 10);
-    const d = new Date(t);
-    $('#liveClock').textContent = `${d.getUTCDate()} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} UTC`;
-    $('#liveMode').textContent = off ? `${off > 0 ? '+' : '−'}${fmtDur(Math.abs(off) / HOUR)}` : 'Live'; $('#liveReset').hidden = !off;
-    $('#liveSun').textContent = `${sgn(G.sun.el)}° el, ${(G.sun.vis * 100).toFixed(0)}% clear`;
-    $('#liveEarth').textContent = `${sgn(G.ear.el)}° el, ${G.ear.vis >= COMM_MIN ? 'in view' : 'hidden'}`;
-    $('#liveEvL').textContent = G.up ? 'Sunset in' : 'Sunrise in'; $('#liveEv').textContent = G.ev == null ? 'over 200 d' : fmtDur(G.ev);
-  };
-  cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, off }; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener('pointermove', (e) => { if (!drag) return; off = drag.off + (e.clientX - drag.x) * 20 * 60e3; draw(); });
-  const end = () => { drag = null; }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
-  $('#liveReset').addEventListener('click', () => { off = 0; draw(); });
-  $('#heroToday').addEventListener('click', () => { st.base = clampBase(Math.floor(Date.now() / HOUR) * HOUR); st.slip = 0; st.cur = 0; nearby = null; setTab('answer', false); update(); $('#planner').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); toast('Landing set to the current hour'); });
-  addEventListener('resize', draw);
-  setInterval(() => { if (!document.hidden && !drag) draw(); }, 1000);
-  draw();
-}
-
 // ---------- site ranking: the calendar for every site ----------
 let rankJob = 0, rankKey = '', rankRows = [];
 function scheduleRank() {
@@ -703,7 +627,7 @@ function setupHelp() {
 setupHelp(); setTab('answer', false);
 
 // ---------- AI key (optional, stays in this browser) ----------
-function syncAiUi() { const on = !!getKey(); $('#aiState').textContent = on ? 'On' : 'Off'; $('#aiState').classList.toggle('on', on); $('#aiForget').hidden = !on; $('#askMode').hidden = !on; }
+function syncAiUi() { const m = aiMode(), own = !!getKey(); $('#aiState').textContent = own ? 'Your key' : m === 'server' ? 'Built in' : 'Off'; $('#aiState').classList.toggle('on', !!m); $('#aiForget').hidden = !own; $('#askMode').hidden = !m; }
 $('#aiSave').addEventListener('click', () => { const v = $('#aiKey').value.trim(); if (!v) { toast('Paste a Gemini API key first'); return; } if (!setKey(v)) { toast('This browser blocks local storage, so the key cannot be saved'); return; } $('#aiKey').value = ''; syncAiUi(); toast('AI assistant on. The key is stored only in this browser.'); });
 $('#aiForget').addEventListener('click', () => { setKey(''); syncAiUi(); toast('AI key removed from this browser'); });
 syncAiUi();
@@ -800,7 +724,7 @@ function askFacts() {
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 let askN = 0;
 async function runAsk(text) {
-  const msg = $('#askMsg'), n = ++askN, key = getKey(); msg.hidden = false;
+  const msg = $('#askMsg'), n = ++askN, key = aiMode(); msg.hidden = false;
   const show = (bits, note) => { msg.innerHTML = (bits.length ? 'Showing <b>' + bits.join(' · ') + '</b>.' : '') + (note || ''); };
   const offline = (note) => {
     const p = parseAsk(text), q = text.toLowerCase();
@@ -811,7 +735,7 @@ async function runAsk(text) {
   if (!key) { if (offline()) $('#answer').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); return; }
   msg.innerHTML = '<span class="aiTag">AI</span> Reading your question…'; $('#askBtn').disabled = true;
   try {
-    const now = new Date(), r = await aiParse(key, text, sites, now.toISOString().slice(0, 10));
+    const now = new Date(), r = await aiParse(text, sites, now.toISOString().slice(0, 10));
     if (n !== askN) return;
     let base = null; const m = r.date && String(r.date).match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) base = Date.UTC(+m[1], +m[2] - 1, +m[3]);
     const bits = applyAsk({ ids: r.sites || [], base, dur: r.days, slip: r.slip, best: !!r.best, pole: !!r.southPole });
@@ -819,13 +743,13 @@ async function runAsk(text) {
     show(bits, ' <span class="aiNote">Working out the answer…</span>');
     $('#answer').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
     let say = null, why = '';
-    try { say = await aiExplain(key, text, askFacts()); } catch (e) { why = String(e.message || e); }
+    try { say = await aiExplain(text, askFacts()); } catch (e) { why = String(e.message || e); }
     if (n !== askN) return;
     show(bits, say ? `<span class="aiSay"><span class="aiTag">AI</span>${esc(say)}</span><span class="aiNote">Summary written by Google Gemini from Earthset's own numbers, which are computed from NASA data.</span>` : `<span class="aiNote">Question read by Google Gemini. No AI summary this time (${esc(why.slice(0, 90))}); the verdict below is Earthset's own.</span>`);
   } catch (err) {
     if (n !== askN) return;
     offline(`<span class="aiNote">The AI assistant is unavailable (${esc(String(err.message || err).slice(0, 90))}), so the offline parser was used.</span>`);
-  } finally { if (n === askN) $('#askBtn').disabled = false; }
+  } finally { if (n === askN) $('#askBtn').disabled = false; syncAiUi(); }
 }
 $('#askForm').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#askIn').value.trim(); if (v) runAsk(v); });
 $('#askEx').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { $('#askIn').value = e.target.textContent; runAsk(e.target.textContent); } });
@@ -857,7 +781,13 @@ async function init() {
   await readHash();
   relief = createRelief($('#lm3d')); rangeFill($('#lmEx'));
   if (document.fonts && document.fonts.load) await Promise.all([document.fonts.load('condensed 11px "Martian Mono"'), document.fonts.load('700 condensed 11px "Martian Mono"'), document.fonts.load('600 13px Archivo')]).catch(() => {});
-  setMode(st.mode); update(); startHero();
+  setMode(st.mode); update();
+  // arriving from the landing page: ?tour=1 starts the tour, ?q=... runs a question
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('view') && document.querySelector(`#tabs [data-tab="${qs.get('view')}"]`)) setTab(qs.get('view'), false);
+  if (qs.get('tour')) setTimeout(() => showTour(0), 600);
+  else if (qs.get('q')) { $('#askIn').value = qs.get('q').slice(0, 300); runAsk($('#askIn').value); }
+  if (qs.has('tour') || qs.has('q') || qs.has('view')) history.replaceState(null, '', location.pathname + location.hash);
   $('#printBtn').addEventListener('click', () => window.print());
   addEventListener('keydown', (e) => {
     if (tourK >= 0 || e.ctrlKey || e.metaKey || e.altKey || (e.target.closest && e.target.closest('input, select, textarea, button, a, #lm3d'))) return;

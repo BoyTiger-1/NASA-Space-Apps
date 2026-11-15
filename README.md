@@ -18,7 +18,9 @@ site and sorts them by how much launch slip they can absorb, each verdict card s
 the timeline shows which **Deep Space Network complexes** have the Moon in their sky, and **Print brief** turns the
 current scenario into a PDF.
 
-Everything runs in the browser. No server, no login, no API keys.
+The site has two pages: **`index.html`** is the website (what it is, why it matters, how it works, the data)
+and **`app.html`** is the planner itself. All the numbers are computed in the browser from NASA data; no
+login is needed. The only server piece is optional: an AI helper for the Ask bar (see below).
 
 ## What makes the numbers trustworthy
 
@@ -64,8 +66,20 @@ an optional Gemini key (see Use of SI tools) lets it read looser questions and a
 ## Run locally
 
 ```
-python3 -m http.server 8000      # then open http://localhost:8000
+python3 -m http.server 8000      # then open http://localhost:8000  (planner: /app.html)
 ```
+
+## Deploy on Vercel (with the AI assistant)
+
+1. On vercel.com, **Add New → Project**, import this GitHub repository (private repos work). No build
+   settings are needed: it is a static site plus one function, `api/ask.js`.
+2. In the project's **Settings → Environment Variables**, add `GEMINI_API_KEY` with a Google Gemini API
+   key, then redeploy.
+3. The planner's Ask bar now calls `/api/ask`; the key stays on Vercel and never reaches the browser. The
+   function accepts only Earthset's two request types, limits question size and rate-limits each visitor.
+
+Without the variable (or on GitHub Pages) the Ask bar uses its offline parser, and visitors can still paste
+their own key under **More → AI assistant**.
 
 ## Rebuild the data (optional)
 

@@ -340,3 +340,50 @@ footer { color: var(--ink3); font-size: 14px; padding: var(--s7) var(--gutter); 
   .heroWin { height: 460px; }
   .askBox { padding-left: 16px; } .askBox input { font-size: 15px; } .askBox button { padding: 11px 18px; }
 }
+
+/* ---------- landing page ---------- */
+.btn { display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: #fff; border: 1px solid var(--ink); border-radius: 999px; padding: 15px 28px; font-size: 16px; font-weight: 500; text-decoration: none; transition: transform .15s, box-shadow .2s; }
+.btn:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 10px 22px -12px rgba(22, 22, 26, .5); }
+.btn.ghost { background: var(--card); color: var(--ink); border-color: var(--line2); }
+.btn.ghost:hover { color: var(--ink); border-color: var(--ink); }
+.mastNav .cta { background: var(--ink); color: #fff; }
+.mastNav .cta:hover { background: #000; color: #fff; }
+.lsec { max-width: var(--max); margin: 0 auto; padding: var(--s9) var(--gutter) 0; text-align: center; }
+.lh2 { font-size: clamp(36px, 5vw, 68px); font-weight: 600; letter-spacing: -.04em; line-height: 1.02; text-wrap: balance; max-width: 18ch; margin: 0 auto; }
+.lh2 em { color: var(--accent); }
+.lsub { font-size: clamp(16px, 1.4vw, 19px); color: var(--ink2); max-width: 56ch; margin: var(--s5) auto 0; }
+.why3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s7); text-align: left; }
+.why3 > div { background: var(--card); border: 1px solid var(--line); border-radius: var(--r3); padding: var(--s6); box-shadow: var(--shadow); }
+.why3 b { display: block; font-size: clamp(44px, 5vw, 64px); font-weight: 600; letter-spacing: -.05em; line-height: 1; color: var(--accent); }
+.why3 p { margin-top: var(--s4); color: var(--ink2); font-size: 16px; }
+.step { display: grid; grid-template-columns: 5fr 7fr; gap: var(--s7); align-items: center; margin-top: var(--s8); text-align: left; }
+.step.rev { grid-template-columns: 7fr 5fr; } .step.rev .stepTxt { order: 2; }
+.stepTxt .num { font: italic 400 22px var(--serif); color: var(--accent); }
+.stepTxt h3 { font-size: clamp(26px, 2.6vw, 36px); font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: var(--s2) 0 var(--s4); }
+.stepTxt p { color: var(--ink2); font-size: 17px; }
+.shot { background: var(--card); border: 1px solid var(--line); border-radius: var(--r3); padding: var(--s3); box-shadow: 0 30px 60px -30px rgba(22, 22, 26, .35); }
+.shot img { display: block; width: 100%; height: auto; border-radius: var(--r2); }
+.feat { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s7); text-align: left; }
+.feat > div { padding: var(--s6); border-radius: var(--r3); background: var(--card); border: 1px solid var(--line); }
+.feat h3 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; margin-bottom: var(--s2); }
+.feat p { color: var(--ink2); font-size: 15.5px; }
+.dataBand { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s7); align-items: center; text-align: left; background: #111114; color: #ece9e1; border-radius: var(--r3); padding: var(--s8) var(--s7); }
+.dataBand .lh2 { margin: 0; color: #fff; } .dataBand .lh2 em { color: #ffb37a; }
+.dataBand .kicker { color: #ffb37a; }
+.dataBand .lsub { margin: var(--s4) 0 var(--s6); color: #b9b5ab; }
+.dataBand .btn.ghost { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .3); } .dataBand .btn.ghost:hover { border-color: #fff; }
+.srcList { list-style: none; padding: 0; margin: 0; }
+.srcList li { padding: var(--s4) 0; border-top: 1px solid rgba(255, 255, 255, .12); }
+.srcList b { display: block; font-weight: 600; color: #fff; } .srcList span { color: #a9a59b; font-size: 15px; }
+.tryIt .askBox { max-width: 760px; margin: var(--s6) auto 0; }
+.lfoot { max-width: var(--max); margin: var(--s9) auto 0; padding: var(--s7) var(--gutter); border-top: 1px solid var(--line); color: var(--ink3); font-size: 14px; text-align: center; display: grid; gap: var(--s2); }
+.lfoot b { color: var(--ink); } .lfoot a { color: var(--ink2); }
+.appPage .ask { margin-top: var(--s7); }
+.appPage .secHead { margin-top: var(--s8); }
+@media (max-width: 900px) {
+  .why3, .feat, .dataBand { grid-template-columns: 1fr; }
+  .step, .step.rev { grid-template-columns: 1fr; gap: var(--s5); margin-top: var(--s7); } .step.rev .stepTxt { order: 0; }
+  .dataBand { padding: var(--s6) var(--s5); }
+  .mastNav .hideS { display: none; }
+  .lsec { padding-top: var(--s8); }
+}
