@@ -1,4 +1,4 @@
-// Earthset — Web Worker: terrain horizons for custom sites and the "nearby
+// Earthset: Web Worker: terrain horizons for custom sites and the "nearby
 // spots" rescue search, computed in the browser from reduced LOLA grids.
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { Ephemeris } from './ephem.js';

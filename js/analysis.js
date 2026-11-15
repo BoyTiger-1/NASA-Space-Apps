@@ -1,4 +1,4 @@
-// Earthset — mission-window analysis (shared by the app, the worker and Node tests).
+// Earthset: mission-window analysis (shared by the app, the worker and Node tests).
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { azel, makeSite, R_SUN, R_EARTH } from './ephem.js';
 import { discVisible } from './terrain.js';
@@ -134,7 +134,7 @@ export function nextEvent(vis, i, thr) {
 }
 
 export function fmtDur(h) {
-  if (h == null) return '—';
+  if (h == null) return 'none';
   if (h < 1) return Math.round(h * 60) + ' min';
   if (h < 48) return (Math.round(h * 10) / 10) + ' h';
   const d = Math.floor(h / 24), r = Math.round(h - d * 24);

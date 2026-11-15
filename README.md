@@ -1,16 +1,22 @@
-# Earthset — Lunar Landing Window Navigator
+# Earthset: Lunar Landing Window Navigator
 
 **2026 NASA Space Apps Challenge · Seattle · Challenge: Lunar Landing Site Navigator**
 
 Earthset answers one question fast: *if we land here, on this day, will the lander have sunlight and a
-direct line to Earth — and what do we do if the launch slips?*
+direct line to Earth, and what do we do if the launch slips?*
 
 It shows the Sun and Earth over the **real terrain horizon** at any lunar landing site, compares up to four
 sites side by side, turns two years of geometry into a GO / NO-GO **landing-window calendar**, and when a
 schedule slip breaks the plan it searches for a later date, a better site, or a better spot a few hundred
 metres away. It also casts **real shadows across the terrain** around a site (live, as the mission plays, or
-averaged over the mission), runs a simple **battery survival model** on the actual lighting, and has a
-**60-second guided tour**.
+averaged over the mission, flat or as a **3D relief** you can orbit), runs a simple **battery survival model**
+on the actual lighting, and has a **60-second guided tour**.
+
+It also opens on a **live view**: the real skyline of the Shackleton-de Gerlache ridge with the Sun and Earth where
+they are this minute (drag it to move through time). A **site ranking** runs the landing-window calendar for every
+site and sorts them by how much launch slip they can absorb, each verdict card shows its **slip margin** in days,
+the timeline shows which **Deep Space Network complexes** have the Moon in their sky, and **Print brief** turns the
+current scenario into a PDF.
 
 Everything runs in the browser. No server, no login, no API keys.
 
@@ -30,21 +36,24 @@ Reproduce: `node tools/test.mjs`, `node tools/validate_ephem.mjs`, `node tools/c
 
 ## How it works
 
-1. **Ephemeris** — `tools/build_ephem.py` uses NASA/JPL SPICE kernels (DE440, lunar orientation `moon_pa_de440`,
+1. **Ephemeris**: `tools/build_ephem.py` uses NASA/JPL SPICE kernels (DE440, lunar orientation `moon_pa_de440`,
    Mean-Earth frame) to get apparent Sun and Earth positions from the Moon, and fits Chebyshev polynomials
    (`data/ephem.bin`, 490 kB, 2024–2039). `js/ephem.js` evaluates them and converts to azimuth/elevation at a site.
-2. **Terrain horizon** — `js/terrain.js` ray-marches NASA LRO **LOLA** elevation grids out to 450 km in 720
+2. **Terrain horizon**: `js/terrain.js` ray-marches NASA LRO **LOLA** elevation grids out to 450 km in 720
    directions, with lunar curvature, from 2 m above the surface. Curated sites are precomputed from
    full-resolution grids (20–474 m) by `tools/build_sites.mjs`; custom sites are computed live in a Web Worker
    from reduced grids (120 m inside 85°S).
-3. **Visibility** — the Sun is a 0.53° disc: we integrate the part above the terrain and subtract the part
+3. **Visibility**: the Sun is a 0.53° disc: we integrate the part above the terrain and subtract the part
    covered by Earth during eclipses. Earth is "in view" when its centre clears the terrain.
-4. **Windows** — `js/analysis.js` scores hourly geometry against adjustable mission rules (minimum sunlit time,
+4. **Windows**: `js/analysis.js` scores hourly geometry against adjustable mission rules (minimum sunlit time,
    longest survivable darkness, minimum Earth-link time, Sun/Earth at touchdown).
-5. **Shadow map** — `lightMap` in `js/terrain.js` marches from every pixel of a grid around the site toward the
+5. **Shadow map**: `lightMap` in `js/terrain.js` marches from every pixel of a grid around the site toward the
    Sun and toward Earth, using each pixel's own local vertical, to find what is lit and what has a link.
-6. **Battery model** — `simulateEnergy` in `js/analysis.js`: array output scales with the visible fraction of the
+6. **Battery model**: `simulateEnergy` in `js/analysis.js`: array output scales with the visible fraction of the
    Sun; the lander sleeps when the Sun is hidden. Deliberately simple, with example values the user can change.
+7. **Ground stations**: `js/earthside.js` finds when the Moon is more than 10° above Goldstone, Madrid and Canberra,
+   using the Astronomical Almanac low-precision lunar series (about 0.3°; it agrees with the DE440 elongation to 0.3°).
+8. **3D relief**: `js/relief3d.js` drapes the shadow map over the same LOLA grid in plain WebGL, no libraries.
 
 ## Run locally
 
@@ -67,16 +76,17 @@ node tools/validate_ephem.mjs
 - Lighting and direct-to-Earth line of sight only: no thermal, slope, hazard, relay-satellite or ground-station modelling.
 - The battery model is a teaching-level energy balance with example numbers, not a model of any real spacecraft.
 - The shadow map considers terrain within 150 km and approximates partial sunlight linearly across the Sun's disc.
-- The hero animation uses a real LOLA horizon, but its motion is sped up for illustration.
+- The live view at the top uses real positions and a real LOLA horizon, but stretches elevation relative to azimuth (the factor is printed on it).
+- Ground-station rows are geometry only (Moon above 10°), not a DSN schedule.
 - Custom sites and the nearby search use reduced-resolution terrain; treat them as screening.
 - LOLA grids contain interpolated gaps, especially away from the poles.
 - Some South Pole entries are illustrative points inside NASA's Artemis III candidate regions; NASA has not published site coordinates. These are labelled in the app.
 
 ## Data and references
 
-- NASA/JPL Horizons System — https://ssd.jpl.nasa.gov/horizons/ (validation reference)
-- NASA/JPL NAIF generic kernels — de440s.bsp, moon_pa_de440_200625.bpc, moon_de440_250416.tf, pck00011.tpc, naif0012.tls
-- NASA LRO LOLA Gridded Data Records, PDS Geosciences Node — LDEM_875S_20M, LDEM_85S_40M, LDEM_80S_80M, LDEM_75S_120M, LDEM_75N_120M, LDEM_64, LDEM_16
+- NASA/JPL Horizons System: https://ssd.jpl.nasa.gov/horizons/ (validation reference)
+- NASA/JPL NAIF generic kernels: de440s.bsp, moon_pa_de440_200625.bpc, moon_de440_250416.tf, pck00011.tpc, naif0012.tls
+- NASA LRO LOLA Gridded Data Records, PDS Geosciences Node: LDEM_875S_20M, LDEM_85S_40M, LDEM_80S_80M, LDEM_75S_120M, LDEM_75N_120M, LDEM_64, LDEM_16
 - Mazarico et al. (2011), *Illumination conditions of the lunar polar regions using LOLA topography*, Icarus 211, 1066–1081
 - Landing-site coordinates: NASA NSSDCA, LROC (ASU), ISRO (Chandrayaan-3), JAXA (SLIM), IAU Gazetteer of Planetary Nomenclature
 - Blue Ghost Mission 1 event times: Firefly Aerospace / NASA mission updates (March 2025)

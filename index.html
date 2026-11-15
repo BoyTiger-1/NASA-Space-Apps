@@ -3,38 +3,57 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earthset — Lunar Landing Window Navigator</title>
+<title>Earthset: Lunar Landing Window Navigator</title>
 <meta name="description" content="Compare lunar landing sites and dates in seconds. Sun and Earth positions over the real LOLA terrain horizon, validated against NASA/JPL Horizons.">
-<meta name="generator" content="Built for the 2026 NASA Space Apps Challenge. Code written with the assistance of an SI coding tool (Claude); see the About panel.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23060911'/%3E%3Ccircle cx='20' cy='22' r='11' fill='%235aa9ff'/%3E%3Cpath d='M0 25 L9 22 L15 26 L24 21 L31 25 L40 23 L40 40 L0 40Z' fill='%23cfd3de'/%3E%3C/svg%3E">
+<meta name="generator" content="Built for the 2026 NASA Space Apps Challenge. Code written with the assistance of an SI coding tool (Claude); see the Method section.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%230b0b0a'/%3E%3Ccircle cx='20' cy='23' r='11' fill='%2358a6ff'/%3E%3Cpath d='M0 26 L9 23 L15 27 L24 22 L31 26 L40 24 L40 40 L0 40Z' fill='%23efece4'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/martianmono.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-<header class="top">
-  <div class="brand">
-    <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><defs><clipPath id="c"><rect x="0" y="0" width="40" height="25"/></clipPath></defs><circle cx="20" cy="22" r="11" fill="#5aa9ff" clip-path="url(#c)"/><path d="M0 25 L9 22 L15 26 L24 21 L31 25 L40 23 L40 40 L0 40Z" fill="#cfd3de"/></svg>
-    <div><h1>EARTHSET</h1><p>Lunar landing window navigator</p></div>
-  </div>
-  <div class="top-right">
+<body id="top">
+<header class="mast">
+  <a class="brand" href="#top" aria-label="Earthset, top of page">
+    <svg viewBox="0 0 40 40" width="30" height="30" aria-hidden="true"><rect width="40" height="40" fill="#0b0b0a"/><circle cx="20" cy="23" r="11" fill="#58a6ff"/><path d="M0 26 L9 23 L15 27 L24 22 L31 26 L40 24 L40 40 L0 40Z" fill="#efece4"/></svg>
+    <span class="wm">Earthset</span>
+  </a>
+  <p class="mastSub">Lunar landing window navigator <span>2026 NASA Space Apps Challenge, Seattle</span></p>
+  <nav class="mastNav" aria-label="Page">
     <div class="seg" role="group" aria-label="Detail level">
       <button id="modeExplorer" class="on" title="Plain-language explanations">Explorer</button>
       <button id="modePlanner" title="Dense numbers for mission planners">Planner</button>
     </div>
-    <button id="tourBtn" class="ghost glow">▶ 60-second tour</button>
-    <a class="ghost" href="#about">Data &amp; validation</a>
-  </div>
+    <button id="tourBtn" class="ghost">Guided tour</button>
+    <button id="printBtn" class="ghost" title="Print or save this scenario as a PDF brief">Print brief</button>
+    <a class="ghost" href="#about">Method and validation</a>
+  </nav>
 </header>
 
 <section class="hero" id="hero">
-  <canvas id="heroCv" aria-hidden="true"></canvas>
+  <canvas id="heroCv" aria-label="Live view of the Sun and Earth over the terrain horizon at the Shackleton-de Gerlache ridge"></canvas>
   <div class="heroTxt">
-    <p class="kicker">2026 NASA Space Apps Challenge · Lunar Landing Site Navigator</p>
-    <h2>Know when the lights —<br>and the link — go out.</h2>
-    <p class="lede">At the Moon's south pole the Sun never climbs more than about 1.5° above the horizon. One hill decides whether a lander has power and a radio link home. Earthset shows you, for any site and any date, in seconds — and finds a way out when the launch slips.</p>
-    <div class="heroBtns"><button id="heroTour">▶ Take the 60-second tour</button><a class="ghost" href="#tool">Open the navigator ↓</a></div>
-    <ul class="chips"><li><b>0.00003°</b> from NASA/JPL Horizons</li><li><b>20 m</b> LOLA terrain at the pole</li><li><b>28 / 28</b> automated checks pass</li><li><b>0</b> servers, logins or API keys</li></ul>
+    <h1>The Sun never climbs higher than about 2° here.</h1>
+    <p class="lede">This is the real skyline of a ridge at the Moon's south pole, traced from NASA laser altimetry, with the Sun and Earth where they are this minute. One hill decides whether a lander has power and a radio link home. Earthset checks any site on any date, and finds a way out when the launch slips.</p>
+    <div class="heroBtns"><button id="heroTour">Take the 60-second tour</button><button id="heroToday" class="ghost">Plan a landing from today</button></div>
+  </div>
+  <div class="live" id="live">
+    <p class="liveHd"><i></i><span id="liveMode">Live</span><b id="liveClock"></b></p>
+    <dl>
+      <dt>Site</dt><dd id="liveSite"></dd>
+      <dt>Sun</dt><dd id="liveSun"></dd>
+      <dt>Earth</dt><dd id="liveEarth"></dd>
+      <dt id="liveEvL">Sunset in</dt><dd id="liveEv"></dd>
+    </dl>
+    <p class="liveHint">Drag the sky sideways to move through time. <button id="liveReset" hidden>Back to now</button></p>
   </div>
 </section>
+
+<ul class="facts" aria-label="Key numbers">
+  <li><b>0.00003°</b><span>worst difference from NASA/JPL Horizons across 26,936 comparisons</span></li>
+  <li><b>20 m</b><span>LOLA terrain grid used at the pole</span></li>
+  <li><b>28 of 28</b><span>automated checks pass</span></li>
+  <li><b>0</b><span>servers, logins or API keys. Everything runs in this tab</span></li>
+</ul>
 
 <section class="controls" id="tool" aria-label="Mission controls">
   <label>Planned landing (UTC)<input type="datetime-local" id="date" step="3600"></label>
@@ -44,7 +63,7 @@
   <label class="slip">Launch slip <b id="slipLbl">none</b>
     <input type="range" id="slip" min="0" max="180" value="0" step="1">
   </label>
-  <button id="rulesBtn" class="ghost">Mission rules</button>
+  <button id="rulesBtn" class="ghost" aria-expanded="false">Mission rules</button>
   <button id="shareBtn" class="ghost" title="Copy a link to this exact scenario">Copy link</button>
   <div id="rules" class="pop" hidden>
     <h4>Mission rules <small>what counts as GO</small></h4>
@@ -56,8 +75,10 @@
   </div>
 </section>
 
+<div class="printHead" id="printHead"></div>
+
 <main class="grid">
-  <aside class="panel sites">
+  <aside class="sites">
     <h2>Landing sites</h2>
     <p class="hint">Tick up to four to compare. Click a name to focus it.</p>
     <div id="siteList"></div>
@@ -73,28 +94,30 @@
     <section id="cards" class="cards" aria-live="polite"></section>
 
     <section class="panel" id="panoPanel">
-      <div class="phead"><h2>Sky at the landing site <span id="panoSite"></span></h2><div class="scrub"><button id="play" class="ghost" aria-label="Play">▶ Play mission</button><input type="range" id="cursor" min="0" max="336" value="0" step="1"><b id="cursorLbl"></b></div></div>
-      <p class="explain">This is the full 360° view from the lander. The grey silhouette is the real terrain around the site, measured by NASA's LOLA laser altimeter. The yellow line is the Sun's path during the mission and the blue one is Earth's. When the Sun dips behind terrain the lander loses power; when Earth does, it loses its direct radio link.</p>
+      <div class="phead"><h2>Sky at the landing site <span id="panoSite"></span></h2><div class="scrub"><button id="play" aria-label="Play mission">Play mission</button><input type="range" id="cursor" min="0" max="336" value="0" step="1" aria-label="Mission time"><b id="cursorLbl"></b></div></div>
+      <p class="explain">The full 360° view from the lander. The grey silhouette is the real terrain around the site, measured by NASA's LOLA laser altimeter. The yellow line is the Sun's path during the mission and the blue one is Earth's. When the Sun dips behind terrain the lander loses power. When Earth does, it loses its direct radio link.</p>
       <div class="panoWrap">
         <canvas id="pano" class="cv" height="300"></canvas>
         <div class="zooms">
-          <figure><canvas id="zSun" width="170" height="170"></canvas><figcaption id="zSunCap">Sun · true scale</figcaption></figure>
-          <figure><canvas id="zEarth" width="170" height="170"></canvas><figcaption id="zEarthCap">Earth · true scale</figcaption></figure>
+          <figure><canvas id="zSun" width="170" height="170"></canvas><figcaption id="zSunCap">Sun, true scale</figcaption></figure>
+          <figure><canvas id="zEarth" width="170" height="170"></canvas><figcaption id="zEarthCap">Earth, true scale</figcaption></figure>
         </div>
       </div>
       <div id="countdown" class="countdown"></div>
+      <p class="hint keys">Keyboard: <kbd>Space</kbd> plays or pauses, <kbd>←</kbd> <kbd>→</kbd> step one hour, hold <kbd>Shift</kbd> to step a day.</p>
     </section>
 
     <section class="panel" id="tlPanel">
-      <div class="phead"><h2>Mission timeline</h2><div class="legend"><i style="background:#ffc857"></i>Sun elevation <i style="background:#9aa1b5"></i>terrain toward the Sun <i style="background:#5aa9ff"></i>Earth elevation <i style="background:#5aa9ff66"></i>terrain toward Earth (dashed)</div><button id="csv" class="ghost planner-only">Export CSV</button></div>
-      <p class="explain">Each row is one site across the whole mission. Yellow means the Sun is above the terrain (power), blue means Earth is visible (direct communication). Gaps are the dangerous parts.</p>
+      <div class="phead"><h2>Mission timeline</h2><button id="csv" class="ghost planner-only">Export CSV</button></div>
+      <p class="explain">Each row is one site across the whole mission. Yellow means the Sun is above the terrain (power) and blue means Earth is visible (direct communication). Gaps are the dangerous parts. The bottom rows show which Deep Space Network complexes on Earth have the Moon in their sky to listen.</p>
+      <div class="legend"><i style="background:#e0a000"></i>Sun elevation <i style="background:#8d8a80"></i>terrain toward the Sun <i style="background:#1f6fd6"></i>Earth elevation <i class="dash"></i>terrain toward Earth <i style="background:#12a889"></i>DSN complex has the Moon above 10°</div>
       <canvas id="timeline" class="cv" height="260"></canvas>
     </section>
 
     <section class="panel" id="enPanel">
       <div class="phead"><h2>Will the lander survive? <small>battery model</small></h2>
         <select id="enPreset" aria-label="Lander preset"><option value="650,300,50,1500">Small lander (example)</option><option value="250,120,25,800">Rover (example)</option><option value="900,350,60,30000">Night-survival lander, large battery (example)</option></select></div>
-      <p class="explain">Sunlight only matters because it becomes power. Give the lander a solar array and a battery and watch the charge over the mission: the line falls whenever terrain (or Earth) hides the Sun. If it hits zero, the lander dies. The numbers are examples — change them.</p>
+      <p class="explain">Sunlight only matters because it becomes power. Give the lander a solar array and a battery and watch the charge over the mission. The line falls whenever terrain (or Earth) hides the Sun. If it hits zero, the lander dies. The numbers are examples, so change them.</p>
       <div class="enIn">
         <label>Solar array <span><input id="enArr" type="number" min="0" step="50"> W</span></label>
         <label>Awake load <span><input id="enLoad" type="number" min="0" step="10"> W</span></label>
@@ -108,29 +131,37 @@
     </section>
 
     <section class="panel" id="calPanel">
-      <div class="phead"><h2>Landing-window calendar <small>next 24 months · click a day to land then</small></h2>
-        <div class="legend"><i class="go"></i>GO <i class="marg"></i>marginal <i class="nogo"></i>NO-GO <i class="lineA"></i>planned <i class="lineB"></i>after slip</div></div>
-      <p class="explain">What if the launch slips? Every column is a possible landing day; the colour says whether a mission of the chosen length would meet the rules if it landed that day. Drag the “Launch slip” slider and watch good windows open and close.</p>
-      <canvas id="cal" class="cv" height="160"></canvas>
-      <div id="calTip" class="tip" hidden></div>
+      <div class="phead"><h2>Landing-window calendar <small>next 24 months, click a day to land then</small></h2></div>
+      <p class="explain">What if the launch slips? Every column is a possible landing day. The colour says whether a mission of the chosen length would meet the rules if it landed that day. Drag the "Launch slip" slider and watch good windows open and close.</p>
+      <div class="legend"><i class="go"></i>GO <i class="marg"></i>marginal <i class="nogo"></i>NO-GO <i class="lineA"></i>planned <i class="lineB"></i>after slip</div>
+      <div class="calWrap"><canvas id="cal" class="cv" height="160"></canvas><div id="calTip" class="tip" hidden></div></div>
+    </section>
+
+    <section class="panel" id="rankPanel">
+      <div class="phead"><h2>Which site forgives a slip? <small id="rankInfo"></small></h2></div>
+      <p class="explain">The calendar above, run for every site in the list and sorted by how many of the next 730 landing days are GO. A site with long unbroken windows can absorb a launch delay. A site with thin slivers cannot.</p>
+      <div id="rank" class="rank"></div>
     </section>
 
     <section class="panel" id="rescuePanel">
       <div class="phead"><h2>Rescue the mission</h2></div>
-      <p class="explain">When a delay breaks the plan, engineers need alternatives fast: a later date at the same site, or a slightly different spot nearby. Earthset searches both.</p>
+      <p class="explain">When a delay breaks the plan, engineers need alternatives fast: a later date at the same site, a different site, or a slightly different spot nearby. Earthset searches all three.</p>
       <div id="rescue"></div>
     </section>
 
     <section class="panel" id="lmPanel">
-      <div class="phead"><h2>Shadow map around the site</h2><div class="seg" id="lmLayer"><button data-l="sun" class="on">Sunlight</button><button data-l="earth">Earth link</button></div></div>
-      <p class="explain">Earthset casts real shadows across the LOLA terrain around the site, pixel by pixel. “This moment” shows where sunlight falls right now and then follows the mission clock, so pressing Play makes the shadows sweep; “Whole mission” averages the mission to reveal the best-lit ground. Click any point on the map to add it as a landing site.</p>
+      <div class="phead"><h2>Shadow map around the site</h2>
+        <div class="tools"><div class="seg" id="lmLayer"><button data-l="sun" class="on">Sunlight</button><button data-l="earth">Earth link</button></div>
+        <div class="seg" id="lmView"><button data-v="2d" class="on">Flat map</button><button data-v="3d">3D relief</button></div></div></div>
+      <p class="explain">Earthset casts real shadows across the LOLA terrain around the site, pixel by pixel. "This moment" shows where sunlight falls right now and then follows the mission clock, so pressing Play makes the shadows sweep. "Whole mission" averages the mission to reveal the best-lit ground. Switch to 3D relief and drag to orbit the terrain. On the flat map, click any point to add it as a landing site.</p>
       <div class="lmWrap">
-        <div class="lmCv"><canvas id="lm"></canvas><div id="lmTip" class="tip" hidden></div></div>
+        <div class="lmCv"><canvas id="lm"></canvas><canvas id="lm3d" tabindex="0" aria-label="3D relief of the terrain around the site. Drag or use arrow keys to orbit." hidden></canvas><div id="lmTip" class="tip" hidden></div></div>
         <div class="lmSide">
           <button id="lmNow">Cast shadows at this moment</button>
           <button id="lmMission" class="ghost">Average over the whole mission</button>
           <p id="lmInfo" class="hint">Nothing computed yet.</p>
           <div class="ramp"><span>dark</span><i id="lmRamp"></i><span>lit</span></div>
+          <label class="exag" id="lmExWrap" hidden>Vertical exaggeration <b id="lmExLbl">2×</b><input type="range" id="lmEx" min="1" max="6" step="0.5" value="2"></label>
           <p class="hint">Terrain within 150 km is considered. Uses the reduced LOLA grid for the site's latitude (120 m inside 85°S).</p>
         </div>
       </div>
@@ -138,35 +169,37 @@
 
     <section class="panel" id="mapPanel">
       <div class="phead"><h2>Map</h2><div class="seg" id="mapTabs"><button data-m="south" class="on">South Pole (80°S+)</button><button data-m="zoom">Pole close-up (87.5°S+)</button><button data-m="global">Whole Moon</button></div></div>
-      <p class="explain">Shaded relief made from LOLA elevation data. The arrows show where the Sun and Earth are right now; near the pole they sit almost on the horizon, so every hill casts a shadow kilometres long. Click to place a custom site.</p>
+      <p class="explain">Shaded relief made from LOLA elevation data. The arrows show where the Sun and Earth are right now. Near the pole they sit almost on the horizon, so every hill casts a shadow kilometres long. Click to place a custom site.</p>
       <div class="mapWrap"><canvas id="map" class="cv"></canvas></div>
     </section>
 
     <section class="panel about" id="about">
-      <h2>Data, method &amp; validation</h2>
+      <div class="phead"><h2>Data, method and validation</h2></div>
       <div class="cols">
         <div>
           <h3>How it works</h3>
           <ol>
-            <li><b>Ephemeris.</b> Sun and Earth positions come from NASA/JPL's DE440 planetary ephemeris and lunar orientation kernels (SPICE), with light-time and stellar aberration, in the Moon's Mean-Earth frame. They are compressed into Chebyshev polynomials (fit error &lt; 0.02″) so everything runs in your browser, offline, for 2024–2039.</li>
-            <li><b>Terrain horizon.</b> For every site we ray-march NASA LRO LOLA topography (20 m–474 m grids) out to 450 km in 720 directions, including the Moon's curvature, to get the true horizon as seen from 2 m above the surface. The Moon has no atmosphere, so there is no refraction to correct.</li>
-            <li><b>Visibility.</b> The Sun is treated as a 0.53° disc, not a point: we integrate how much of it clears the terrain, and subtract the part Earth covers during eclipses. Earth counts as “in view” when its centre is above the terrain.</li>
-            <li><b>Windows.</b> Hourly geometry for two years is scored against your mission rules to build the calendar and the rescue search.</li>
-            <li><b>Shadow map.</b> For every pixel around a site we march across the terrain toward the Sun and toward Earth, using that pixel's own local vertical, to see what is lit and what has a link.</li>
-            <li><b>Battery model.</b> A deliberately simple energy balance: array output scales with the visible part of the Sun; the lander sleeps when the Sun is hidden.</li>
+            <li><b>Ephemeris.</b> Sun and Earth positions come from NASA/JPL's DE440 planetary ephemeris and lunar orientation kernels (SPICE), with light-time and stellar aberration, in the Moon's Mean-Earth frame. They are compressed into Chebyshev polynomials (fit error below 0.02″) so everything runs in your browser, offline, for 2024 to 2039.</li>
+            <li><b>Terrain horizon.</b> For every site we ray-march NASA LRO LOLA topography (20 m to 474 m grids) out to 450 km in 720 directions, including the Moon's curvature, to get the true horizon as seen from 2 m above the surface. The Moon has no atmosphere, so there is no refraction to correct.</li>
+            <li><b>Visibility.</b> The Sun is treated as a 0.53° disc, not a point. We integrate how much of it clears the terrain, and subtract the part Earth covers during eclipses. Earth counts as "in view" when its centre is above the terrain.</li>
+            <li><b>Windows.</b> Hourly geometry for two years is scored against your mission rules to build the calendar, the site ranking and the rescue search.</li>
+            <li><b>Shadow map.</b> For every pixel around a site we march across the terrain toward the Sun and toward Earth, using that pixel's own local vertical, to see what is lit and what has a link. The 3D relief drapes the same result over the same elevation grid.</li>
+            <li><b>Battery model.</b> A deliberately simple energy balance: array output scales with the visible part of the Sun, and the lander sleeps when the Sun is hidden.</li>
+            <li><b>Ground stations.</b> A station row is filled when the Moon is more than 10° above the horizon at Goldstone, Madrid or Canberra. The Moon's position as seen from Earth uses the Astronomical Almanac low-precision series (about 0.3°), so station rise and set times are good to a minute or two.</li>
           </ol>
           <h3>Limits you should know</h3>
           <ul>
-            <li>Custom sites and the “nearby spots” search use reduced grids (120 m inside 85°S, 480 m to 75°, 3.8 km elsewhere); curated sites use full-resolution LOLA.</li>
-            <li>LOLA grids themselves have gaps filled by interpolation, especially away from the poles; a real mission would confirm with higher-resolution local models.</li>
-            <li>GO/NO-GO reflects only lighting and direct-to-Earth line of sight — not thermal, slopes, hazards, relay satellites or ground-station schedules.</li>
+            <li>Custom sites, the "nearby spots" search and the shadow map use reduced grids (120 m inside 85°S, 480 m to 75°, 3.8 km elsewhere). Curated sites use full-resolution LOLA.</li>
+            <li>LOLA grids themselves have gaps filled by interpolation, especially away from the poles. A real mission would confirm with higher-resolution local models.</li>
+            <li>GO and NO-GO reflect only lighting and direct-to-Earth line of sight. Thermal limits, slopes, hazards and relay satellites are not modelled, and the station rows are geometry, not a DSN schedule.</li>
+            <li>The view at the top of the page stretches elevation relative to azimuth so that a 2° Sun is visible at all. The stretch factor is printed on it.</li>
           </ul>
         </div>
         <div>
           <h3>Checked against NASA/JPL Horizons</h3>
           <div id="valid"></div>
           <h3>Checked against a real mission</h3>
-          <p>Firefly's Blue Ghost Mission 1 (NASA CLPS) sat in Mare Crisium in March 2025. Earthset, run for that site, predicts Earth fully covering the Sun on 14 March 2025 until <b>08:34 UTC</b>; Blue Ghost photographed the “diamond ring” as totality ended at about 08:30 UTC (3:30 a.m. CDT). It predicts the last sliver of Sun setting on 16 March at <b>20:23 UTC</b>; Firefly reported its final downlink at 23:15 UTC after roughly five hours of lunar night, i.e. sunset near 18:15 UTC — agreement to about two hours (≈1° of Sun elevation), reasonable given the 474 m terrain grid used at that latitude and the approximate landing coordinates. Reproduce: <code>node tools/check_events.mjs</code></p>
+          <p>Firefly's Blue Ghost Mission 1 (NASA CLPS) sat in Mare Crisium in March 2025. Earthset, run for that site, predicts Earth fully covering the Sun on 14 March 2025 until <b>08:34 UTC</b>. Blue Ghost photographed the "diamond ring" as totality ended at about 08:30 UTC (3:30 a.m. CDT). It predicts the last sliver of Sun setting on 16 March at <b>20:23 UTC</b>. Firefly reported its final downlink at 23:15 UTC after roughly five hours of lunar night, which puts sunset near 18:15 UTC. That is agreement to about two hours (about 1° of Sun elevation), reasonable given the 474 m terrain grid used at that latitude and the approximate landing coordinates. Reproduce: <code>node tools/check_events.mjs</code></p>
           <h3>Automated checks</h3>
           <p>28 tests cover the ephemeris, horizon geometry, eclipse maths, shadow casting, site behaviour (far side never sees Earth, crater floor never sees the Sun, 14.8-day equatorial night) and the battery model. Run <code>node tools/test.mjs</code>.</p>
           <h3>Sources</h3>
@@ -176,21 +209,23 @@
             <li>NASA LRO <a href="https://pds-geosciences.wustl.edu/missions/lro/lola.htm">LOLA Gridded Data Records</a> (PDS Geosciences Node): LDEM_875S_20M, LDEM_85S_40M, LDEM_80S_80M, LDEM_75S_120M, LDEM_75N_120M, LDEM_64, LDEM_16</li>
             <li>Mazarico et al. (2011), <i>Illumination conditions of the lunar polar regions using LOLA topography</i>, Icarus 211</li>
             <li>Site coordinates: NASA NSSDCA, LROC, ISRO, JAXA, IAU Gazetteer (listed per site)</li>
-            <li>Blue Ghost Mission 1 event times: Firefly Aerospace / NASA mission updates, March 2025</li>
+            <li>Blue Ghost Mission 1 event times: Firefly Aerospace and NASA mission updates, March 2025</li>
+            <li>Deep Space Network complex locations: NASA/JPL. Low-precision lunar position: <i>The Astronomical Almanac</i></li>
+            <li>Typefaces, both under the SIL Open Font License and served from this site: Archivo (Omnibus-Type) and Martian Mono (Evil Martians)</li>
           </ul>
           <h3>Use of SI tools</h3>
-          <p>The source code, data-processing scripts and interface text of this project were written with the assistance of an SI coding tool (Anthropic's Claude), directed, run and reviewed by the team. All numbers shown are computed from the NASA data above, not generated by SI. No SI-generated images, video or audio are used; the map imagery is rendered directly from LOLA elevation data. No NASA logos or mission identifiers are used.</p>
+          <p>The source code, data-processing scripts and interface text of this project were written with the assistance of an SI coding tool (Anthropic's Claude), directed, run and reviewed by the team. All numbers shown are computed from the NASA data above, not generated by SI. No SI-generated images, video or audio are used. The map imagery is rendered directly from LOLA elevation data. No NASA logos or mission identifiers are used.</p>
         </div>
       </div>
     </section>
   </div>
 </main>
-<footer>Earthset · built for the 2026 NASA Space Apps Challenge (Seattle) · Challenge: Lunar Landing Site Navigator · Not an official NASA product.</footer>
+<footer>Earthset. Built for the 2026 NASA Space Apps Challenge (Seattle), challenge "Lunar Landing Site Navigator". Not an official NASA product.</footer>
 <div id="toast" class="toast" hidden></div>
 <aside id="tour" class="tour" hidden aria-live="polite">
   <div class="tourBar"><i id="tourProg"></i></div>
   <small id="tourStep"></small><h3 id="tourTitle"></h3><p id="tourText"></p>
-  <div class="tourBtns"><button id="tourBack" class="ghost">Back</button><button id="tourNext">Next</button><button id="tourClose" class="ghost" aria-label="Close tour">✕</button></div>
+  <div class="tourBtns"><button id="tourBack" class="ghost">Back</button><button id="tourNext">Next</button><button id="tourClose" class="ghost">Close</button></div>
 </aside>
 <script type="module" src="js/app.js"></script>
 </body>

@@ -3,35 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earthset — Project Demo (7 slides)</title>
+<title>Earthset: Project Demo (7 slides)</title>
 <meta name="generator" content="Slides written with the assistance of an SI tool (Claude). Screenshots are of the team's working app; no SI-generated images.">
 <style>
-  :root { --bg: #060911; --panel: #0d1320; --line: #1e2942; --text: #e9edf7; --mute: #9aa5c0; --sun: #ffc857; --earth: #5aa9ff; --go: #3ddc97; --nogo: #ff5d6c; --accent: #7fe3ff; }
+  @font-face { font-family: "Archivo"; src: url(../fonts/archivo-wdth.woff2) format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; }
+  @font-face { font-family: "Martian Mono"; src: url(../fonts/martianmono.woff2) format("woff2"); font-weight: 100 800; font-stretch: 75% 112.5%; font-display: swap; }
+  :root { --paper: #efece4; --ink: #151513; --ink2: #55534b; --hair: #c4bfb0; --sig: #ad2c07; --go: #17703d; --nogo: #b3261a; --sun: #8a5a00; --earth: #1a5fb8; --mono: "Martian Mono", Consolas, monospace; }
   * { box-sizing: border-box; margin: 0; }
   html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--text); font: 20px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; }
-  section { min-height: 100vh; overflow: hidden; scroll-snap-align: start; padding: 5vh 6vw; display: flex; flex-direction: column; justify-content: center; gap: 2.2vh; position: relative; background: radial-gradient(1100px 500px at 80% -10%, #152040 0%, transparent 60%); border-bottom: 1px solid var(--line); }
-  .n { position: absolute; right: 3vw; bottom: 3vh; color: var(--mute); font: 14px ui-monospace, Menlo, monospace; }
-  .k { color: var(--accent); font-size: 14px; letter-spacing: .22em; text-transform: uppercase; font-weight: 600; }
-  h1 { font-size: clamp(44px, 8vw, 104px); letter-spacing: .22em; line-height: 1; }
-  h2 { font-size: clamp(28px, 4vw, 52px); line-height: 1.12; max-width: 24ch; }
-  p, li { color: #cdd5e8; max-width: 62ch; }
+  body { background: var(--paper); color: var(--ink); font: 20px/1.4 "Archivo", "Helvetica Neue", Arial, sans-serif; }
+  section { min-height: 100vh; overflow: hidden; scroll-snap-align: start; padding: 9vh 6vw 8vh; display: flex; flex-direction: column; justify-content: center; gap: 2.4vh; position: relative; border-bottom: 2px solid var(--ink); }
+  .n, .k { position: absolute; top: 3vh; font: condensed 13px var(--mono); color: var(--ink2); }
+  .n { right: 6vw; } .k { left: 6vw; text-transform: uppercase; letter-spacing: .06em; }
+  h1 { font-size: clamp(56px, 11vw, 170px); font-weight: 800; font-stretch: 125%; text-transform: uppercase; line-height: .9; letter-spacing: -.01em; }
+  h2 { font-size: clamp(30px, 4.4vw, 62px); font-weight: 800; font-stretch: 70%; line-height: 1.02; max-width: 22ch; text-transform: uppercase; text-wrap: balance; }
+  p, li { max-width: 62ch; }
   ul { padding-left: 1.1em; display: grid; gap: .5em; }
-  b { color: #fff; } .sun { color: var(--sun); } .earth { color: var(--earth); } .go { color: var(--go); } .nogo { color: var(--nogo); }
-  img { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
+  .sun { color: var(--sun); } .earth { color: var(--earth); } .go { color: var(--go); } .nogo { color: var(--nogo); }
+  img { max-width: 100%; max-height: 62vh; width: auto; height: auto; border: 1px solid var(--ink); display: block; }
+  .stack img { max-height: 26vh; } .two .stack img { max-height: 40vh; }
   .two { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 4vw; align-items: center; }
-  .two.wide { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); } .two.wide + .fine { margin-top: 1vh; }
+  .two.wide { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); }
   .txt { display: flex; flex-direction: column; gap: 2vh; }
-  .stack { display: grid; gap: 1.4vh; }
-  .big { font: 700 clamp(40px, 6vw, 84px)/1 ui-monospace, Menlo, monospace; color: var(--go); }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; }
-  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 2vh 1.6vw; }
-  .stats small { color: var(--mute); display: block; font-size: 15px; margin-top: .4em; }
-  .stats .v { font: 700 clamp(24px, 3vw, 40px)/1.1 ui-monospace, Menlo, monospace; }
-  .team { color: var(--mute); font-size: 18px; } .team b { font-weight: 600; }
-  a { color: var(--accent); }
-  .fine { font-size: 14px; color: var(--mute); max-width: 90ch; }
-  @media (max-width: 900px) { .two, .stats { grid-template-columns: 1fr; } body { font-size: 17px; } }
+  .stack { display: grid; gap: 1.6vh; }
+  .big { font: 700 condensed clamp(40px, 6vw, 84px)/1 var(--mono); color: var(--go); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid var(--ink); }
+  .stats div { padding: 2vh 1.6vw 0 0; } .stats div + div { border-left: 1px solid var(--ink); padding-left: 1.6vw; }
+  .stats small { color: var(--ink2); display: block; font-size: 16px; margin-top: .4em; }
+  .stats .v { font-size: clamp(24px, 3vw, 40px); font-weight: 800; font-stretch: 70%; text-transform: uppercase; line-height: 1.1; }
+  .team { color: var(--ink2); font-size: 18px; } .team b { font-weight: 600; color: var(--ink); }
+  a { color: var(--ink); } a:hover { color: var(--sig); }
+  .fine { font-size: 14px; color: var(--ink2); max-width: 100ch; }
+  @media (max-width: 900px) { .two, .two.wide, .stats { grid-template-columns: 1fr; } .stats div + div { border-left: 0; padding-left: 0; } body { font-size: 17px; } }
   @media print { html { scroll-snap-type: none; } section { page-break-after: always; min-height: 100vh; } }
 </style>
 </head>
@@ -39,11 +42,11 @@
 
 <section>
   <div class="k">2026 NASA Space Apps Challenge · Seattle · Lunar Landing Site Navigator</div>
-  <h1>EARTHSET</h1>
-  <h2>Know when the lights — and the link — go out.</h2>
-  <p>A landing-window navigator for the Moon: Sun and Earth over the real terrain horizon, for any site and any date, in seconds.</p>
+  <h1>Earthset</h1>
+  <img src="img/hero.png" alt="Earthset's opening view: the live skyline of the Shackleton connecting ridge with the Sun two degrees above the horizon">
+  <p>A landing-window navigator for the Moon: Sun and Earth over the real terrain horizon, for any site and any date, in seconds. It opens on the sky over the south pole as it is this minute.</p>
   <p class="team"><b>Team:</b> Ronit Agarwal, Shaurya Sahdev, Rayan Alam, Vyom Joshi</p>
-  <p class="team"><a href="../">Open the live tool →</a></p>
+  <p class="team"><a href="../">Open the live tool</a></p>
   <div class="n">1 / 7</div>
 </section>
 
@@ -69,7 +72,7 @@
   <img src="img/cards_go.png" alt="Three site cards showing GO verdicts with sunlit percentage, Earth link percentage and longest darkness">
   <div class="two">
     <p>Compare up to four sites: past landings, CLPS targets, south-pole candidates, or any coordinates you click on the map. Each card gives a plain-language verdict against <b>your</b> mission rules.</p>
-    <p>Explorer mode explains everything for students and the public; Planner mode adds the numbers, a shareable link and CSV export.</p>
+    <p>Each card also says how many days of launch slip the plan can absorb. Explorer mode explains everything for students and the public. Planner mode adds the numbers, a shareable link, CSV export and a printable brief.</p>
   </div>
   <div class="n">3 / 7</div>
 </section>
@@ -78,22 +81,22 @@
   <div class="k">The moment it matters</div>
   <h2>The launch slips 20 days. All three sites go from <span class="go">GO</span> to <span class="nogo">NO-GO</span>.</h2>
   <div class="stack">
-    <img src="img/controls_slip.png" alt="Controls with the launch slip slider set to plus 20 days">
     <img src="img/cards_slip.png" alt="The same three site cards after a 20 day slip, now all NO-GO">
     <img src="img/calendar.png" alt="Landing-window calendar: two years of possible landing days per site coloured GO, marginal or NO-GO">
+    <p>The calendar scores every landing day for two years. The ranking runs it for all 19 sites to show which ones can absorb a delay.</p>
   </div>
   <div class="n">4 / 7</div>
 </section>
 
 <section>
   <div class="k">Rescue the mission</div>
-  <h2>A later date, another site — or a better-lit spot nearby.</h2>
+  <h2>A later date, another site, or a better-lit spot nearby.</h2>
   <div class="two wide">
     <div class="stack">
       <img src="img/rescue.png" alt="Rescue panel listing the next GO date, other sites ranked for the same date, and nearby spots tested on the LOLA grid">
-      <p>Earthset casts real shadows over LOLA terrain, pixel by pixel, to map where sunlight falls across the whole mission. Press Play and the shadows sweep across the ground. At the Shackleton–de Gerlache ridge, two points <b>80 m apart</b> get <b>64%</b> and <b>86%</b> sunlight over 16 years.</p>
+      <p>Earthset casts real shadows over LOLA terrain, pixel by pixel, to map where sunlight falls across the whole mission. Press Play and the shadows sweep across the ground, flat or in 3D. At the Shackleton–de Gerlache ridge, two points <b>80 m apart</b> get <b>64%</b> and <b>86%</b> sunlight over 16 years.</p>
     </div>
-    <img src="img/shadow_mission.png" alt="Mission-average sunlight map around the Shackleton connecting ridge, bright on the ridge and dark inside Shackleton crater">
+    <img src="img/relief3d.png" alt="3D relief of the terrain around the Shackleton connecting ridge coloured by mission-average sunlight, bright on the ridge and dark inside Shackleton crater">
   </div>
   <div class="n">5 / 7</div>
 </section>
@@ -101,7 +104,7 @@
 <section>
   <div class="two">
     <div class="txt">
-      <div class="k">NASA data makes it possible — and checkable</div>
+      <div class="k">NASA data makes it possible and checkable</div>
       <div class="big">0.00003°</div>
       <p>Worst difference from <b>NASA/JPL Horizons</b> across 26,936 Sun and Earth positions (7 sites, 2025–2038).</p>
       <ul>
@@ -118,10 +121,10 @@
 
 <section>
   <div class="k">Where this goes</div>
-  <h2>From sunlight to survival — in minutes, not days.</h2>
+  <h2>From sunlight to survival, in minutes.</h2>
   <img src="img/energy.png" alt="Battery model panel: state of charge over the mission for three sites, one surviving and two running out of power">
   <div class="stats">
-    <div><div class="v">Planners</div><small>Compare site–date options, test a lander's battery on the real lighting, share any scenario as a link.</small></div>
+    <div><div class="v">Planners</div><small>Compare sites and dates, test a lander's battery on the real lighting, see which Deep Space Network complex is listening, share any scenario as a link.</small></div>
     <div><div class="v">Educators</div><small>A 60-second guided tour and plain-language mode show why the south pole is so demanding.</small></div>
     <div><div class="v">Next</div><small>Full-resolution terrain everywhere, relay satellites, thermal limits, rover traverses between lit spots.</small></div>
   </div>

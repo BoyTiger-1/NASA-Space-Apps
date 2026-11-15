@@ -1,4 +1,4 @@
-// Earthset — ephemeris core.
+// Earthset: ephemeris core.
 // Evaluates Chebyshev fits of NASA/JPL DE440 (see tools/build_ephem.py) to get
 // the apparent Sun and Earth vectors in the lunar Mean-Earth body-fixed frame,
 // then converts them to azimuth/elevation at a surface site.

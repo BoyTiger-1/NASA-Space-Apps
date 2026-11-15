@@ -1,4 +1,4 @@
-// Earthset — terrain + horizon engine (runs in Node for precomputation and in
+// Earthset: terrain + horizon engine (runs in Node for precomputation and in
 // the browser / Web Worker for custom sites).
 // Topography: NASA LRO Lunar Orbiter Laser Altimeter (LOLA) gridded radius
 // products, heights in metres relative to the 1737.4 km reference sphere.

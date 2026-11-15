@@ -1,4 +1,4 @@
-# Project page text — copy into spaceappschallenge.org
+# Project page text: copy into spaceappschallenge.org
 
 Check every link in a private browser window before submitting.
 
@@ -35,7 +35,12 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 - **Two audiences.** Explorer mode explains each panel in plain language; Planner mode adds peak Sun elevation, a flat-panel power index, CSV export and shareable links that reproduce an exact scenario.
 - **Shadow map.** Real shadows cast across the LOLA terrain around a site, pixel by pixel: live at any moment (press Play and they sweep across the ground) or averaged over the mission to reveal the best-lit ground. A second layer shows where Earth is in view. Click any pixel to make it a landing site.
 - **Battery survival model.** Give the lander a solar array, loads and a battery; Earthset plots the state of charge on the real lighting for every compared site, says whether it survives, and estimates the data it can send home.
-- **60-second guided tour.** Eight steps walk a newcomer from "three sites are GO" through a launch slip to the rescue, the shadows and the validation.
+- **60-second guided tour.** Nine steps walk a newcomer from "three sites are GO" through a launch slip to the rescue, the shadows and the validation.
+- **Live view.** The page opens on the real skyline of the Shackleton-de Gerlache ridge with the Sun and Earth where they are this minute. Drag it to move through time.
+- **Site ranking and slip margin.** The landing-window calendar is run for every site and sorted by how many of the next 730 landing days are GO, and every verdict card says how many days of slip the plan can absorb.
+- **3D relief.** The shadow map can be draped over the terrain and orbited in 3D.
+- **Ground stations.** The timeline shows when Goldstone, Madrid and Canberra have the Moon above 10°.
+- **Printable brief.** One button turns the current scenario into a PDF.
 - **Eclipses.** It also catches the hours when Earth passes in front of the Sun as seen from the Moon.
 
 **How it works**
@@ -63,7 +68,7 @@ Lighting and direct-to-Earth line of sight only. Custom sites, the nearby search
 
 **Tools**
 
-JavaScript (ES modules, Canvas, Web Workers), HTML and CSS with no third-party runtime libraries; Python (NumPy, spiceypy, Pillow) and Node.js for data preparation and validation; GitHub Pages for hosting.
+JavaScript (ES modules, Canvas, WebGL, Web Workers), HTML and CSS with no third-party runtime libraries; two open-licensed typefaces (Archivo, Martian Mono) served from the site; Python (NumPy, spiceypy, Pillow) and Node.js for data preparation and validation; GitHub Pages for hosting.
 
 ## Use of Super Intelligence (SI)
 
