@@ -33,6 +33,9 @@ Source code: https://github.com/YOUR-USERNAME/earthset
 - **Launch-slip slider and landing-window calendar.** Every possible landing day for the next 24 months is scored for each site, so the effect of a schedule slip is visible immediately.
 - **Rescue the mission.** For a broken plan, Earthset proposes the next GO date at the same site, ranks every other site for the same date, and tests 121 nearby spots on the LOLA grid to find a better-lit location.
 - **Two audiences.** Explorer mode explains each panel in plain language; Planner mode adds peak Sun elevation, a flat-panel power index, CSV export and shareable links that reproduce an exact scenario.
+- **Shadow map.** Real shadows cast across the LOLA terrain around a site, pixel by pixel: live at any moment (press Play and they sweep across the ground) or averaged over the mission to reveal the best-lit ground. A second layer shows where Earth is in view. Click any pixel to make it a landing site.
+- **Battery survival model.** Give the lander a solar array, loads and a battery; Earthset plots the state of charge on the real lighting for every compared site, says whether it survives, and estimates the data it can send home.
+- **60-second guided tour.** Eight steps walk a newcomer from "three sites are GO" through a launch slip to the rescue, the shadows and the validation.
 - **Eclipses.** It also catches the hours when Earth passes in front of the Sun as seen from the Moon.
 
 **How it works**
@@ -46,6 +49,7 @@ Source code: https://github.com/YOUR-USERNAME/earthset
 
 - Against NASA/JPL Horizons at 7 sites, 2025–2038, 26,936 samples: worst difference 0.00003° in azimuth or elevation.
 - Polar LOLA grids against the independent global LOLA grid: no bias, 14–20 m RMS.
+- An automated suite of 28 checks (ephemeris sanity, analytic horizon dip, eclipse geometry, shadow casting, site behaviour, battery model) passes; run `node tools/test.mjs`.
 - Against a real mission: for Blue Ghost Mission 1's site, Earthset predicts totality of the 14 March 2025 eclipse ending at 08:34 UTC (the lander photographed the "diamond ring" at about 08:30 UTC) and lunar sunset on 16 March at 20:23 UTC (Firefly's reports imply about 18:15 UTC, a difference of roughly 1° of Sun elevation on the coarser terrain grid used at that latitude).
 - At the Shackleton–de Gerlache connecting ridge, two points 80 m apart receive 64% and 86% sunlight over 16 years, showing why terrain-true horizons matter.
 
@@ -55,7 +59,7 @@ Mission teams can compare site and date options together in minutes when schedul
 
 **Limits**
 
-Lighting and direct-to-Earth line of sight only. Custom sites and the nearby search use reduced-resolution terrain and are for screening. Some south-pole entries are illustrative points inside NASA's Artemis III candidate regions and are labelled as such.
+Lighting and direct-to-Earth line of sight only. Custom sites, the nearby search and the shadow map use reduced-resolution terrain and are for screening. The battery model is a simple energy balance with example numbers, not any real spacecraft. Some south-pole entries are illustrative points inside NASA's Artemis III candidate regions and are labelled as such.
 
 **Tools**
 

@@ -125,6 +125,67 @@ export function discVisible(hz, az, el, rad) {
   return top <= -90 ? 0 : vis / tot;
 }
 
+// Lat/lon (deg) of the point `de` metres east and `dn` metres north of a site.
+export function offsetLL(latDeg, lonDeg, de, dn) {
+  const la = latDeg * D2R, lo = lonDeg * D2R, cl = Math.cos(la), sl = Math.sin(la), co = Math.cos(lo), so = Math.sin(lo);
+  const x = cl * co * RM - so * de - sl * co * dn, y = cl * so * RM + co * de - sl * so * dn, z = sl * RM + cl * dn;
+  const r = Math.hypot(x, y, z);
+  return { lat: Math.asin(z / r) * R2D, lon: Math.atan2(y, x) * R2D, q: [x / r, y / r, z / r] };
+}
+
+// Light map: for an N x N grid of points around a site, the fraction of the
+// Sun's disc above the terrain and whether Earth's centre is visible, averaged
+// over the given times. Every pixel uses its own local vertical, so the result
+// is geometrically exact for the DEM (terrain considered out to maxDist).
+// sunEarth(t) must return { s: [x,y,z] unit Sun direction, rS: Sun angular
+// radius (rad), e: [x,y,z] Earth position in metres } in MOON_ME.
+export function lightMap(terrain, latDeg, lonDeg, mast, N, res, times, sunEarth, opts = {}) {
+  const maxDist = opts.maxDist || 150e3, growth = opts.growth || 0.04, onProgress = opts.onProgress;
+  const px = N * N, U = new Float64Array(px * 3), RP = new Float64Array(px), H = new Float32Array(px);
+  for (let j = 0, k = 0; j < N; j++) for (let i = 0; i < N; i++, k++) {
+    const o = offsetLL(latDeg, lonDeg, (i - (N - 1) / 2) * res, ((N - 1) / 2 - j) * res);
+    U[3 * k] = o.q[0]; U[3 * k + 1] = o.q[1]; U[3 * k + 2] = o.q[2];
+    H[k] = terrain.height(o.q[0], o.q[1], o.q[2]); RP[k] = RM + H[k] + mast;
+  }
+  // the marching distances are the same for every ray: precompute their trig
+  const CT = [], ST = [];
+  for (let s = res * 0.7; s < maxDist; s += Math.max(res * 0.7, s * growth)) { CT.push(Math.cos(s / RM)); ST.push(Math.sin(s / RM)); }
+  const M = CT.length;
+  const march = (ux, uy, uz, tx, ty, tz, rp, stop) => {
+    let best = -Infinity;
+    for (let m = 0; m < M; m++) {
+      const ct = CT[m], st = ST[m];
+      const rq = RM + terrain.height(ct * ux + st * tx, ct * uy + st * ty, ct * uz + st * tz);
+      const tn = (rq * ct - rp) / (rq * st);
+      if (tn > best) { best = tn; if (best >= stop) return best; }
+    }
+    return best;
+  };
+  const lit = new Float32Array(px), comm = new Float32Array(px);
+  for (let n = 0; n < times.length; n++) {
+    const { s, rS, e } = sunEarth(times[n]);
+    for (let k = 0; k < px; k++) {
+      const ux = U[3 * k], uy = U[3 * k + 1], uz = U[3 * k + 2], rp = RP[k];
+      const su = s[0] * ux + s[1] * uy + s[2] * uz, el = Math.asin(su);
+      if (el > -rS - 0.2) {
+        let tx = s[0] - su * ux, ty = s[1] - su * uy, tz = s[2] - su * uz; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
+        const hmax = Math.atan(march(ux, uy, uz, tx, ty, tz, rp, Math.tan(Math.min(1.55, el + rS))));
+        const f = (el + rS - hmax) / (2 * rS); lit[k] += f <= 0 ? 0 : f >= 1 ? 1 : f;
+      }
+      let dx = e[0] - rp * ux, dy = e[1] - rp * uy, dz = e[2] - rp * uz; const dl = Math.hypot(dx, dy, dz); dx /= dl; dy /= dl; dz /= dl;
+      const eu = dx * ux + dy * uy + dz * uz;
+      if (eu > -0.2) {
+        let tx = dx - eu * ux, ty = dy - eu * uy, tz = dz - eu * uz; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
+        const stop = eu / Math.sqrt(Math.max(1e-12, 1 - eu * eu));
+        if (march(ux, uy, uz, tx, ty, tz, rp, stop) < stop) comm[k] += 1;
+      }
+    }
+    if (onProgress) onProgress(n + 1, times.length);
+  }
+  for (let k = 0; k < px; k++) { lit[k] /= times.length; comm[k] /= times.length; }
+  return { N, res, lit, comm, h: H };
+}
+
 // ---- compact DEM container used by the browser (row-delta int16, gzip) ----
 export function deltaDecode(i16, n, m) {
   for (let r = 0; r < m; r++) { let o = r * n; for (let c = 1; c < n; c++) i16[o + c] = (i16[o + c] + i16[o + c - 1]) | 0; }

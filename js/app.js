@@ -1,8 +1,8 @@
 // Earthset — application UI.
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { loadEphemeris, makeSite, azel, subPoint, R_SUN, R_EARTH, R_MOON } from './ephem.js';
-import { horizonAt, discVisible } from './terrain.js';
-import { buildSeries, windowMetrics, verdict, calendar, nextEvent, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
+import { horizonAt, discVisible, offsetLL } from './terrain.js';
+import { buildSeries, windowMetrics, verdict, calendar, nextEvent, simulateEnergy, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
 
 const $ = (q) => document.querySelector(q);
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
@@ -10,7 +10,9 @@ const COLORS = ['#ffc857', '#5aa9ff', '#c58bff', '#3ddc97'];
 const SPAN_DAYS = 730, MAX_DUR = 180;
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const st = { sel: ['ridge', 'im2', 'im1'], focus: 'ridge', base: Date.UTC(2027, 0, 15), slip: 0, dur: 14, cur: 0, rules: { ...DEFAULT_RULES }, mode: 'explorer', map: 'south' };
+const st = { sel: ['ridge', 'im2', 'im1'], focus: 'ridge', base: Date.UTC(2027, 0, 15), slip: 0, dur: 14, cur: 0, rules: { ...DEFAULT_RULES }, mode: 'explorer', map: 'south', frac: 0, en: { arrayW: 650, loadW: 300, sleepW: 50, battWh: 1500, mbps: 2, tracking: true } };
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lm = null, lmLayer = 'sun', lmBusy = false, tourK = -1;
 let eph, sites = [], worker, reqN = 0, playing = null, nearby = null, customN = 0;
 const pending = {}, seriesCache = new Map(), imgs = {};
 
@@ -89,24 +91,39 @@ function sentence(s, m) {
   if (m.eclipse > 0.01) out.push(`Heads-up: Earth passes in front of the Sun during this mission (an eclipse), covering up to ${(m.eclipse * 100).toFixed(0)}% of it.`);
   return out.join(' ');
 }
+const prevVals = new Map(), prevLevel = new Map(); let prevCardKey = '';
+function tweenAll(root) {
+  for (const el of root.querySelectorAll('[data-k]')) {
+    const k = el.dataset.k, to = +el.dataset.v, from = prevVals.has(k) ? prevVals.get(k) : (el.classList.contains('mfill') ? 0 : to), f = el.dataset.f;
+    prevVals.set(k, to);
+    if (el.classList.contains('mfill')) { el.style.width = from + '%'; requestAnimationFrame(() => requestAnimationFrame(() => { el.style.width = to + '%'; })); continue; }
+    const fmt = (v) => f === 'pct' ? v.toFixed(0) + '%' : fmtDur(Math.round(v));
+    if (from === to || reduceMotion) { el.textContent = fmt(to); continue; }
+    const t0 = performance.now(), D = 420; el._tw = t0; el.textContent = fmt(from);
+    const step = (t) => { if (el._tw !== t0 || !el.isConnected) return; const x = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - x, 3); el.textContent = fmt(from + (to - from) * e); if (x < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+}
 function renderCards() {
-  let h = '';
+  let h = ''; const key = st.sel.join(','), same = key === prevCardKey; prevCardKey = key;
   for (const id of st.sel) {
     const s = site(id), S = series(s), m = windowMetrics(S, L(), L() + N()), v = verdict(m, st.rules);
     s._m = m; s._v = v;
-    h += `<article class="card${id === st.focus ? ' focus' : ''}" data-id="${id}" style="--c:${colorOf(id)}">
-      <h3><span>${s.name}</span><span class="badge ${v.level}">${v.level === 'go' ? 'GO' : v.level === 'marginal' ? 'MARGINAL' : 'NO-GO'}</span></h3>
+    const flip = prevLevel.has(id) && prevLevel.get(id) !== v.level; prevLevel.set(id, v.level);
+    h += `<article class="card${id === st.focus ? ' focus' : ''}${same ? ' noanim' : ''}" data-id="${id}" style="--c:${colorOf(id)}">
+      <h3><span>${s.name}</span><span class="badge ${v.level}${flip ? ' flip' : ''}">${v.level === 'go' ? 'GO' : v.level === 'marginal' ? 'MARGINAL' : 'NO-GO'}</span></h3>
       <div class="ll">${fmtLL(s)} · ${s.ground >= 0 ? '+' : ''}${s.ground} m${s.approx ? ' · illustrative point' : ''}${s.custom ? ` · ${s.res} m grid` : ''}</div>
       <div class="kv">
-        <div><b class="sun">${m.sunPct.toFixed(0)}%</b>sunlit</div><div><b class="earth">${m.commPct.toFixed(0)}%</b>Earth link</div>
-        <div><b>${fmtDur(m.maxDarkH)}</b>longest darkness</div><div><b>${fmtDur(m.maxOutageH)}</b>longest link outage</div>
+        <div><b class="sun" data-k="${id}:sun" data-v="${m.sunPct}" data-f="pct"></b><i class="meter" style="--m:var(--sun)"><i class="mfill" data-k="${id}:sunm" data-v="${m.sunPct}"></i></i>sunlit</div>
+        <div><b class="earth" data-k="${id}:com" data-v="${m.commPct}" data-f="pct"></b><i class="meter" style="--m:var(--earth)"><i class="mfill" data-k="${id}:comm" data-v="${m.commPct}"></i></i>Earth link</div>
+        <div><b data-k="${id}:dark" data-v="${m.maxDarkH}" data-f="dur"></b>longest darkness</div><div><b data-k="${id}:out" data-v="${m.maxOutageH}" data-f="dur"></b>longest link outage</div>
         <div class="planner-only"><b>${m.peakSunEl.toFixed(1)}°</b>peak Sun elevation</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
       </div>
       <p class="say">${sentence(s, m)}</p>
       ${v.fails.length ? `<p class="why">✕ ${v.fails.join('; ')}</p>` : ''}${v.warns.length ? `<p class="why w">! ${v.warns.join('; ')}</p>` : ''}
     </article>`;
   }
-  $('#cards').innerHTML = h;
+  $('#cards').innerHTML = h; tweenAll($('#cards'));
 }
 $('#cards').addEventListener('click', (e) => { const c = e.target.closest('.card'); if (c) { st.focus = c.dataset.id; nearby = null; update(); } });
 
@@ -142,9 +159,12 @@ function drawPano() {
   };
   track(S.sunAz, S.sunEl, S.sunVis, LIT_MIN, '#ffc857'); track(S.earthAz, S.earthEl, S.earthVis, COMM_MIN, '#5aa9ff');
   // Sun and Earth (drawn before terrain so terrain hides them correctly)
-  const sx = X(S.sunAz[i]), sy = Y(S.sunEl[i]), ex = X(S.earthAz[i]), ey = Y(S.earthEl[i]);
-  const gl = c.createRadialGradient(sx, sy, 0, sx, sy, 46); gl.addColorStop(0, '#fff6d8'); gl.addColorStop(0.12, '#ffc857'); gl.addColorStop(0.3, '#ffc85755'); gl.addColorStop(1, '#ffc85700');
-  c.fillStyle = gl; c.beginPath(); c.arc(sx, sy, 46, 0, 7); c.fill();
+  const fr = st.frac || 0, i2 = Math.min(S.n - 1, i + 1), lerp = (a, k) => a[k] + (a[i2] - a[k]) * fr, lerpAz = (a) => { let d = a[i2] - a[i]; if (d > 180) d -= 360; if (d < -180) d += 360; return (a[i] + d * fr + 360) % 360; };
+  const sx = X(lerpAz(S.sunAz)), sy = Y(lerp(S.sunEl, i)), ex = X(lerpAz(S.earthAz)), ey = Y(lerp(S.earthEl, i));
+  const gr = 46 * (playing ? 1 + 0.07 * Math.sin(performance.now() / 260) : 1);
+  const gl = c.createRadialGradient(sx, sy, 0, sx, sy, gr); gl.addColorStop(0, '#fff6d8'); gl.addColorStop(0.12, '#ffc857'); gl.addColorStop(0.3, '#ffc85755'); gl.addColorStop(1, '#ffc85700');
+  c.fillStyle = gl; c.beginPath(); c.arc(sx, sy, gr, 0, 7); c.fill();
+  if (S.sunVis[i] >= LIT_MIN) { const fl = c.createLinearGradient(sx - 150, 0, sx + 150, 0); fl.addColorStop(0, '#ffc85700'); fl.addColorStop(0.5, '#ffe9b055'); fl.addColorStop(1, '#ffc85700'); c.fillStyle = fl; c.fillRect(sx - 150, sy - 1, 300, 2); }
   c.fillStyle = '#5aa9ff'; c.beginPath(); c.arc(ex, ey, 7, 0, 7); c.fill(); c.fillStyle = '#bfe0ff'; c.beginPath(); c.arc(ex - 2, ey - 2, 3, 0, 7); c.fill();
   // terrain
   c.beginPath(); c.moveTo(X(0), Y(hz.el[0]));
@@ -234,7 +254,7 @@ function drawTimeline() {
   c.textAlign = 'left'; const cx = X(l0 + st.cur); c.strokeStyle = '#7fe3ff'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(cx, top); c.lineTo(cx, h - 16); c.stroke();
   $('#timeline')._geo = { ml, pw };
 }
-function timelinePick(e) { const g = $('#timeline')._geo; if (!g) return; const r = e.target.getBoundingClientRect(); st.cur = Math.max(0, Math.min(N() - 1, Math.round((e.clientX - r.left - g.ml) / g.pw * N()))); $('#cursor').value = st.cur; drawPano(); renderCountdown(); drawTimeline(); drawMap(); }
+function timelinePick(e) { const g = $('#timeline')._geo; if (!g) return; const r = e.target.getBoundingClientRect(); stopPlay(); st.cur = Math.max(0, Math.min(N() - 1, Math.round((e.clientX - r.left - g.ml) / g.pw * N()))); $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawMap(); }
 $('#timeline').addEventListener('pointerdown', (e) => { timelinePick(e); e.target.setPointerCapture(e.pointerId); e.target.onpointermove = timelinePick; });
 $('#timeline').addEventListener('pointerup', (e) => { e.target.onpointermove = null; });
 
@@ -356,14 +376,23 @@ $('#date').addEventListener('change', (e) => { const v = fromLocalInput(e.target
 $('#dur').addEventListener('change', (e) => { st.dur = +e.target.value; st.cur = 0; nearby = null; update(); });
 $('#slip').addEventListener('input', (e) => { st.slip = +e.target.value; st.cur = 0; nearby = null; update(true); });
 $('#slip').addEventListener('change', () => update());
-$('#cursor').addEventListener('input', (e) => { st.cur = +e.target.value; drawPano(); renderCountdown(); drawTimeline(); drawMap(); });
-$('#play').addEventListener('click', () => {
-  if (playing) { clearInterval(playing); playing = null; $('#play').textContent = '▶ Play mission'; return; }
-  $('#play').textContent = '❚❚ Pause'; if (st.cur >= N() - 2) st.cur = 0;
-  const stepH = Math.max(1, Math.round(N() / 240));
-  playing = setInterval(() => { st.cur += stepH; if (st.cur >= N() - 1) { st.cur = N() - 1; clearInterval(playing); playing = null; $('#play').textContent = '▶ Play mission'; } $('#cursor').value = st.cur; drawPano(); renderCountdown(); drawTimeline(); drawMap(); }, 50);
-});
-function setMode(m) { st.mode = m; document.body.classList.toggle('planner', m === 'planner'); $('#modePlanner').classList.toggle('on', m === 'planner'); $('#modeExplorer').classList.toggle('on', m !== 'planner'); writeHash(); requestAnimationFrame(() => { drawPano(); drawTimeline(); drawCalendar(); drawMap(); }); }
+$('#cursor').addEventListener('input', (e) => { stopPlay(); st.cur = +e.target.value; rangeFill(e.target); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); drawMap(); });
+function stopPlay() { if (playing) cancelAnimationFrame(playing); playing = null; st.frac = 0; $('#play').textContent = '▶ Play mission'; }
+function startPlay() {
+  stopPlay(); $('#play').textContent = '❚❚ Pause'; if (st.cur >= N() - 2) st.cur = 0;
+  let last = performance.now(); const speed = N() / 14000;                    // whole mission in ~14 s
+  const tick = (t) => {
+    const dt = Math.min(100, t - last); last = t; const pos = st.cur + st.frac + dt * speed;
+    if (pos >= N() - 1) { st.cur = N() - 1; stopPlay(); $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawMap(); return; }
+    const cI = Math.floor(pos), changed = cI !== st.cur; st.cur = cI; st.frac = pos - cI; drawPano();
+    if (changed) { $('#cursor').value = st.cur; rangeFill($('#cursor')); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); if (cI % 4 === 0) drawMap(); }
+    playing = requestAnimationFrame(tick);
+  };
+  playing = requestAnimationFrame(tick);
+}
+$('#play').addEventListener('click', () => { if (playing) { stopPlay(); drawPano(); } else startPlay(); });
+function rangeFill(el) { el.style.setProperty('--p', ((el.value - el.min) / Math.max(1, el.max - el.min) * 100) + '%'); }
+function setMode(m) { st.mode = m; document.body.classList.toggle('planner', m === 'planner'); $('#modePlanner').classList.toggle('on', m === 'planner'); $('#modeExplorer').classList.toggle('on', m !== 'planner'); writeHash(); requestAnimationFrame(() => { drawPano(); drawTimeline(); drawEnergy(); drawCalendar(); drawLm(); drawMap(); }); }
 $('#modePlanner').addEventListener('click', () => setMode('planner')); $('#modeExplorer').addEventListener('click', () => setMode('explorer'));
 $('#rulesBtn').addEventListener('click', () => { $('#rules').hidden = !$('#rules').hidden; });
 for (const [id, key, chk] of [['rSun', 'minSunPct'], ['rDark', 'maxDarkH'], ['rComm', 'minCommPct'], ['rSunL', 'needSunAtLanding', 1], ['rEarthL', 'needEarthAtLanding', 1]])
@@ -395,15 +424,170 @@ async function readHash() {
   if (sel.length) { st.sel = sel; st.focus = focus || sel[0]; }
 }
 
+// ---------- energy model ----------
+function drawEnergy() {
+  const { c, w, h } = fit($('#energy'), 170), ml = 40, pw = w - ml - 8, top = 8, ph = h - 30, n = N(), l0 = L();
+  const X = (k) => ml + k / n * pw, Y = (v) => top + (1 - v) * ph;
+  c.fillStyle = '#070a13'; c.fillRect(ml, top, pw, ph);
+  c.font = '10px ui-monospace,Menlo,monospace'; c.fillStyle = '#8f9ab6'; c.textAlign = 'right';
+  for (const v of [0, 0.5, 1]) { c.fillText(v * 100 + '%', ml - 5, Y(v) + 3); c.strokeStyle = '#ffffff12'; c.beginPath(); c.moveTo(ml, Y(v)); c.lineTo(ml + pw, Y(v)); c.stroke(); }
+  let out = '';
+  for (const id of st.sel) {
+    const s = site(id), E = simulateEnergy(series(s), l0, l0 + n, st.en), col = colorOf(id);
+    c.beginPath(); for (let k = 0; k < n; k++) k ? c.lineTo(X(k), Y(E.soc[k])) : c.moveTo(X(k), Y(E.soc[k]));
+    if (id === st.focus) { c.save(); c.lineTo(X(n - 1), Y(0)); c.lineTo(X(0), Y(0)); c.closePath(); const g = c.createLinearGradient(0, top, 0, top + ph); g.addColorStop(0, col + '44'); g.addColorStop(1, col + '00'); c.fillStyle = g; c.fill(); c.restore(); c.beginPath(); for (let k = 0; k < n; k++) k ? c.lineTo(X(k), Y(E.soc[k])) : c.moveTo(X(k), Y(E.soc[k])); }
+    c.strokeStyle = col; c.lineWidth = id === st.focus ? 2.4 : 1.4; c.stroke();
+    c.fillStyle = '#ff5d6c'; for (let k = 0; k < n; k++) if (E.soc[k] <= 0) c.fillRect(X(k), Y(0) - 3, Math.max(1, pw / n + 0.5), 3);
+    const m = s._m, gb = m ? m.commPct / 100 * m.hours * 3600 * st.en.mbps / 8 / 1000 : 0;
+    out += `<div class="cd ${E.deadAtH == null ? 'good' : 'bad'}" style="border-color:${col}"><small>${s.name}</small><b>${E.deadAtH == null ? `Survives · lowest charge ${(E.minSoc * 100).toFixed(0)}%` : `Battery empty at T+${fmtDur(E.deadAtH)}`}</b><span>${E.deadAtH == null ? '' : `without power for ${fmtDur(E.deadH)} · `}${(E.generatedWh / 1000).toFixed(1)} kWh generated · up to ${gb < 10 ? gb.toFixed(1) : gb.toFixed(0)} GB sent home</span></div>`;
+  }
+  const dstep = st.dur <= 14 ? 1 : st.dur <= 60 ? 5 : 20; c.fillStyle = '#8f9ab6'; c.textAlign = 'center';
+  for (let d = 0; d <= st.dur; d += dstep) c.fillText('T+' + d + 'd', X(d * 24), h - 6);
+  c.textAlign = 'left'; c.strokeStyle = '#7fe3ff'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X(st.cur), top); c.lineTo(X(st.cur), top + ph); c.stroke();
+  $('#enOut').innerHTML = out;
+}
+for (const [id, key] of [['enArr', 'arrayW'], ['enLoad', 'loadW'], ['enSleep', 'sleepW'], ['enBatt', 'battWh'], ['enMbps', 'mbps']]) $('#' + id).addEventListener('input', (e) => { st.en[key] = Math.max(0, +e.target.value || 0); drawEnergy(); });
+$('#enTrack').addEventListener('change', (e) => { st.en.tracking = e.target.checked; drawEnergy(); });
+$('#enPreset').addEventListener('change', (e) => { const [a, l, sl, b] = e.target.value.split(',').map(Number); Object.assign(st.en, { arrayW: a, loadW: l, sleepW: sl, battWh: b }); syncEnergyInputs(); drawEnergy(); });
+function syncEnergyInputs() { $('#enArr').value = st.en.arrayW; $('#enLoad').value = st.en.loadW; $('#enSleep').value = st.en.sleepW; $('#enBatt').value = st.en.battWh; $('#enMbps').value = st.en.mbps; $('#enTrack').checked = st.en.tracking; }
+
+// ---------- shadow map ----------
+let lmQueued = null;
+function runLm(mode, quiet) {
+  if (lmBusy) { if (!quiet) lmQueued = mode; return Promise.resolve(); } const s = site(st.focus), n = mode === 'now' ? 1 : 36, times = [];
+  for (let k = 0; k < n; k++) times.push(mode === 'now' ? landMs() + st.cur * HOUR : landMs() + (k + 0.5) / n * N() * HOUR);
+  lmBusy = true; if (!quiet) $('#lmNow').disabled = $('#lmMission').disabled = true;
+  return ask({ type: 'lightmap', lat: s.lat, lon: s.lon, mast: s.mast, N: 220, times, quiet }).then(r => {
+    lm = { N: r.N, res: r.res, lit: r.lit, comm: r.comm, h: r.h, mode, id: s.id, lat: s.lat, lon: s.lon, mast: s.mast, when: times[0], land: landMs(), dur: st.dur, cur: st.cur, sunAz: series(s).sunAz[L() + st.cur] };
+    drawLm();
+  }).catch(e => toast('Shadow map failed: ' + e.message, 4000)).finally(() => { lmBusy = false; $('#lmNow').disabled = $('#lmMission').disabled = false; if (lmQueued) { const q = lmQueued; lmQueued = null; runLm(q); } });
+}
+const RAMP = { sun: [[22, 29, 60], [255, 240, 200]], sunAvg: [[30, 16, 60], [214, 78, 52], [255, 220, 100]], earth: [[20, 24, 40], [90, 169, 255]] };
+function rampAt(stops, v) { const x = Math.max(0, Math.min(1, v)) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i; return [0, 1, 2].map(k => stops[i][k] + (stops[i + 1][k] - stops[i][k]) * f); }
+function drawLm() {
+  const cv = $('#lm'), wCss = cv.clientWidth || 400, { c, w, h } = fit(cv, wCss), s = site(st.focus);
+  const stops = lmLayer === 'earth' ? RAMP.earth : lm && lm.mode === 'mission' ? RAMP.sunAvg : RAMP.sun;
+  $('#lmRamp').style.background = `linear-gradient(90deg, ${stops.map(q => `rgb(${q.join(',')})`).join(',')})`;
+  if (!lm || lm.id !== st.focus) {
+    c.fillStyle = '#060912'; c.fillRect(0, 0, w, h); c.strokeStyle = '#ffffff10';
+    for (let k = 1; k < 8; k++) { c.beginPath(); c.moveTo(k * w / 8, 0); c.lineTo(k * w / 8, h); c.moveTo(0, k * h / 8); c.lineTo(w, k * h / 8); c.stroke(); }
+    c.fillStyle = '#8f9ab6'; c.font = '13px -apple-system,Segoe UI,sans-serif'; c.textAlign = 'center'; c.fillText('Press “Cast shadows at this moment”', w / 2, h / 2 - 8); c.fillText('to light the terrain around ' + (s.name.length > 34 ? 'this site' : s.name), w / 2, h / 2 + 12); c.textAlign = 'left';
+    $('#lmInfo').textContent = 'Nothing computed yet for this site.'; return;
+  }
+  const n = lm.N, off = drawLm.off || (drawLm.off = document.createElement('canvas')); off.width = off.height = n;
+  const oc = off.getContext('2d'), im = oc.createImageData(n, n), d = im.data, val = lmLayer === 'earth' ? lm.comm : lm.lit;
+  const la = lm.mode === 'now' ? lm.sunAz * D2R : -45 * D2R, lx = Math.sin(la), ly = Math.cos(la); let sum = 0;
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const k = j * n + i, i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1), j0 = Math.max(0, j - 1), j1 = Math.min(n - 1, j + 1);
+    const gx = (lm.h[j * n + i1] - lm.h[j * n + i0]) / ((i1 - i0) * lm.res), gy = (lm.h[j0 * n + i] - lm.h[j1 * n + i]) / ((j1 - j0) * lm.res);
+    const sh = Math.max(0.12, Math.min(1.2, 0.55 + 3.2 * (-gx * lx - gy * ly))), v = val[k], col = rampAt(stops, v), a = lm.mode === 'now' && lmLayer === 'sun' ? (v > 0.02 ? 0.3 + 0.7 * sh : 0.7 + 0.5 * sh) : 0.45 + 0.6 * sh;
+    d[4 * k] = col[0] * a; d[4 * k + 1] = col[1] * a; d[4 * k + 2] = col[2] * a; d[4 * k + 3] = 255; sum += v;
+  }
+  oc.putImageData(im, 0, 0); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(off, 0, 0, w, h);
+  // site marker, north arrow, scale bar
+  c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.arc(w / 2, h / 2, 7, 0, 7); c.moveTo(w / 2 - 13, h / 2); c.lineTo(w / 2 - 4, h / 2); c.moveTo(w / 2 + 4, h / 2); c.lineTo(w / 2 + 13, h / 2); c.moveTo(w / 2, h / 2 - 13); c.lineTo(w / 2, h / 2 - 4); c.moveTo(w / 2, h / 2 + 4); c.lineTo(w / 2, h / 2 + 13); c.stroke();
+  const span = n * lm.res, nice = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000].find(v => v >= span / 5) || 200000, bw = nice / span * w;
+  c.fillStyle = '#000a'; c.fillRect(10, h - 30, bw + 16, 22); c.fillStyle = '#fff'; c.fillRect(18, h - 14, bw, 2); c.font = '11px ui-monospace,Menlo,monospace'; c.fillText(nice >= 1000 ? nice / 1000 + ' km' : nice + ' m', 18, h - 18);
+  c.fillStyle = '#000a'; c.fillRect(w - 34, 10, 24, 34); c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('N', w - 22, 23); c.beginPath(); c.moveTo(w - 22, 27); c.lineTo(w - 27, 39); c.lineTo(w - 17, 39); c.fill(); c.textAlign = 'left';
+  if (lm.mode === 'now' && lmLayer === 'sun') { const ax = w / 2 + Math.sin(lm.sunAz * D2R) * (w / 2 - 26), ay = h / 2 - Math.cos(lm.sunAz * D2R) * (h / 2 - 26); c.fillStyle = '#ffc857'; c.beginPath(); c.arc(ax, ay, 6, 0, 7); c.fill(); c.strokeStyle = '#ffc85788'; c.setLineDash([2, 5]); c.beginPath(); c.moveTo(ax, ay); c.lineTo(w / 2, h / 2); c.stroke(); c.setLineDash([]); c.fillText('Sun', ax + 9, ay + 4); }
+  const stale = lm.land !== landMs() || lm.dur !== st.dur || (lm.mode === 'now' && lm.cur !== st.cur);
+  $('#lmInfo').innerHTML = (lm.mode === 'now' ? `Shadows at <b>${fmtDate(lm.when)}</b>.` : `Average of 36 moments across a ${lm.dur}-day mission landing <b>${fmtDate(lm.land, true)}</b>.`) + ` ${(span / 1000).toFixed(span < 30000 ? 1 : 0)} km across, ${Math.round(lm.res)} m per pixel. ${lmLayer === 'earth' ? 'Earth is in view from' : 'Sunlight reaches'} <b>${(sum / (n * n) * 100).toFixed(0)}%</b> of this ground${lm.mode === 'mission' ? ' on average' : ''}.` + (stale ? ' <span style="color:var(--marg)">Settings changed — recompute to update.</span>' : '');
+}
+function lmAt(e) { const r = $('#lm').getBoundingClientRect(), n = lm.N, i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n))), j = Math.max(0, Math.min(n - 1, Math.floor((e.clientY - r.top) / r.height * n))); return { i, j, k: j * n + i, de: (i - (n - 1) / 2) * lm.res, dn: ((n - 1) / 2 - j) * lm.res, x: e.clientX - r.left, y: e.clientY - r.top }; }
+$('#lm').addEventListener('mousemove', (e) => { const t = $('#lmTip'); if (!lm || lm.id !== st.focus) { t.hidden = true; return; } const p = lmAt(e), dist = Math.hypot(p.de, p.dn);
+  t.hidden = false; t.innerHTML = `${dist < 1000 ? Math.round(dist) + ' m' : (dist / 1000).toFixed(1) + ' km'} from the site · ${lm.h[p.k] >= 0 ? '+' : ''}${Math.round(lm.h[p.k])} m<br><b style="color:var(--sun)">${(lm.lit[p.k] * 100).toFixed(0)}%</b> sunlight · <b style="color:var(--earth)">${(lm.comm[p.k] * 100).toFixed(0)}%</b> Earth link · click to add`;
+  t.style.left = Math.min($('#lm').clientWidth - 230, p.x + 14) + 'px'; t.style.top = p.y + 16 + 'px'; });
+$('#lm').addEventListener('mouseleave', () => { $('#lmTip').hidden = true; });
+$('#lm').addEventListener('click', (e) => { if (!lm || lm.id !== st.focus) return; const p = lmAt(e), o = offsetLL(lm.lat, lm.lon, p.de, p.dn); addCustom(o.lat, o.lon, lm.mast); });
+$('#lmNow').addEventListener('click', () => runLm('now')); $('#lmMission').addEventListener('click', () => runLm('mission'));
+$('#lmLayer').addEventListener('click', (e) => { if (e.target.dataset.l) { lmLayer = e.target.dataset.l; for (const b of $('#lmLayer').children) b.classList.toggle('on', b === e.target); drawLm(); } });
+
+// keep the 'this moment' map in step with the mission clock once it has been turned on
+function liveLm() { if (lm && lm.mode === 'now' && lm.id === st.focus && !lmBusy && (lm.cur !== st.cur || lm.land !== landMs())) runLm('now', true); }
+
+// ---------- guided tour ----------
+const TOUR = [
+  { sel: '#cards', title: 'Three sites, one landing date', text: 'These are three real places near the Moon’s south pole. For a 14-day mission landing on 15 January 2027, all three are GO: enough sunlight for power, and enough view of Earth to talk home.', run() { Object.assign(st, { sel: ['ridge', 'im2', 'malapert'], focus: 'ridge', base: Date.UTC(2027, 0, 15), slip: 0, dur: 14, cur: 0, rules: { ...DEFAULT_RULES } }); } },
+  { sel: '#panoPanel', title: 'Stand on the surface', text: 'This is the true horizon around the lander, built from NASA’s LOLA laser measurements. The Sun never rises more than a degree or two here — it just circles the horizon, ducking behind hills. Watch the mission play.', after() { startPlay(); } },
+  { sel: '#cards', title: 'Then the launch slips 20 days', text: 'Same sites, same mission, three weeks later — and every one is NO-GO. Two would land in darkness; the third would land with Earth out of sight. This is the problem real mission planners face.', run() { st.slip = 20; st.cur = 0; } },
+  { sel: '#calPanel', title: 'Two years of landing days at a glance', text: 'Each column is a possible landing day, coloured by whether the mission would meet the rules. The white line is the plan; the blue line is where the slip put us. Click any green day to land then.' },
+  { sel: '#rescuePanel', title: 'Rescue the mission', text: 'Earthset searches for a way out: the next good date at this site (here, just three days later), a better site for the same date, or a better-lit spot a short drive away.' },
+  { sel: '#lmPanel', title: 'Real shadows on real terrain', text: 'Now it casts shadows across the terrain around the site, pixel by pixel, and plays the mission so you can watch them sweep. With the Sun this low, a small ridge throws a shadow kilometres long. Click any bright spot to try it as a landing site.', after() { runLm('now').then(() => { if (tourK === 5) startPlay(); }); } },
+  { sel: '#enPanel', title: 'Sunlight becomes survival', text: 'Give the lander a solar array and a battery. The charge falls whenever terrain hides the Sun; if it reaches zero, the mission is over. Change the numbers to design a lander that survives.' },
+  { sel: '#about', title: 'Don’t take our word for it', text: 'Every Sun and Earth position matches NASA/JPL Horizons to 0.00003°. The tool reproduces the eclipse that Blue Ghost photographed from the Moon in March 2025 to within four minutes. 28 automated checks guard the maths.' },
+];
+function showTour(k) {
+  stopPlay(); tourK = k; const step = TOUR[k];
+  if (step.run) { step.run(); nearby = null; update(); }
+  document.querySelectorAll('.spot').forEach(e => e.classList.remove('spot'));
+  const el = $(step.sel); el.classList.add('spot', 'in');
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: el.offsetHeight > innerHeight * 0.7 ? 'start' : 'center' });
+  $('#tour').hidden = false; $('#tourStep').textContent = `Step ${k + 1} of ${TOUR.length}`; $('#tourTitle').textContent = step.title; $('#tourText').textContent = step.text;
+  $('#tourProg').style.width = ((k + 1) / TOUR.length * 100) + '%'; $('#tourBack').disabled = k === 0; $('#tourNext').textContent = k === TOUR.length - 1 ? 'Finish' : 'Next →';
+  clearTimeout(showTour.t); if (step.after) showTour.t = setTimeout(() => { if (tourK === k) step.after(); }, 900);
+}
+function endTour() { tourK = -1; clearTimeout(showTour.t); $('#tour').hidden = true; document.querySelectorAll('.spot').forEach(e => e.classList.remove('spot')); }
+$('#tourBtn').addEventListener('click', () => showTour(0)); $('#heroTour').addEventListener('click', () => showTour(0));
+$('#tourNext').addEventListener('click', () => tourK >= TOUR.length - 1 ? endTour() : showTour(tourK + 1));
+$('#tourBack').addEventListener('click', () => tourK > 0 && showTour(tourK - 1)); $('#tourClose').addEventListener('click', endTour);
+addEventListener('keydown', (e) => { if (tourK < 0) return; if (e.key === 'Escape') endTour(); else if (e.key === 'ArrowRight') $('#tourNext').click(); else if (e.key === 'ArrowLeft') $('#tourBack').click(); });
+
+// ---------- hero animation ----------
+function startHero() {
+  const cv = $('#heroCv'), hero = $('#hero'), src = site('malapert') || sites[0], hz = src.hzo.el;
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const stars = Array.from({ length: 260 }, () => ({ x: rnd(), y: rnd() * 0.8, r: 0.4 + rnd() * 1.1, p: rnd() * 6.28, s: 0.4 + rnd() * 1.4 }));
+  let visible = true, raf = 0; const t0 = performance.now();
+  const frame = (now) => {
+    raf = 0; const dpr = Math.min(2, devicePixelRatio || 1), w = hero.clientWidth, h = hero.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const t = reduceMotion ? 20 : (now - t0) / 1000, base = h * 0.80, sc = Math.min(26, h / 22);
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#02030a'); g.addColorStop(0.75, '#0a1124'); g.addColorStop(1, '#0d1630'); c.fillStyle = g; c.fillRect(0, 0, w, h);
+    for (const s of stars) { c.globalAlpha = 0.25 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.s + s.p)); c.fillStyle = '#fff'; c.beginPath(); c.arc(s.x * w, s.y * h, s.r, 0, 7); c.fill(); }
+    c.globalAlpha = 1;
+    // a 150-degree slice of the real horizon, drifting slowly like the lunar day
+    const az0 = 250 + t * 0.35, span = 150, Y = (el) => base - el * sc, hzAt = (az) => { const x = (((az % 360) + 360) % 360) * hz.length / 360, i = Math.floor(x), f = x - i; return hz[i % hz.length] * (1 - f) + hz[(i + 1) % hz.length] * f; };
+    const sunAz = 318 + t * 0.35 * 0.72, sunX = (sunAz - az0) / span * w, sunEl = 1.15 + 0.5 * Math.sin(t * 0.11), sunY = Y(sunEl);
+    const ex = w * 0.80, ey = Y(8.2 + 1.3 * Math.sin(t * 0.17)), er = Math.max(15, sc * 0.95);
+    const gl = c.createRadialGradient(sunX, sunY, 0, sunX, sunY, h * 0.55); gl.addColorStop(0, '#fff7dd'); gl.addColorStop(0.035, '#ffd778'); gl.addColorStop(0.12, '#ffc85738'); gl.addColorStop(1, '#ffc85700'); c.fillStyle = gl; c.fillRect(0, 0, w, h);
+    const fl = c.createLinearGradient(sunX - w * 0.3, 0, sunX + w * 0.3, 0); fl.addColorStop(0, '#ffc85700'); fl.addColorStop(0.5, '#ffeec066'); fl.addColorStop(1, '#ffc85700'); c.fillStyle = fl; c.fillRect(sunX - w * 0.3, sunY - 1, w * 0.6, 2);
+    // Earth with phase facing the Sun
+    c.fillStyle = '#0b1a36'; c.beginPath(); c.arc(ex, ey, er, 0, 7); c.fill();
+    c.save(); c.translate(ex, ey); c.rotate(Math.atan2(sunY - ey, sunX - ex)); const eg = c.createLinearGradient(0, -er, er, er); eg.addColorStop(0, '#8fd0ff'); eg.addColorStop(1, '#2f7fe0'); c.fillStyle = eg;
+    c.beginPath(); c.arc(0, 0, er, -Math.PI / 2, Math.PI / 2, false); c.ellipse(0, 0, er * 0.28, er, 0, Math.PI / 2, -Math.PI / 2, false); c.fill(); c.restore();
+    c.strokeStyle = '#5aa9ff33'; c.lineWidth = 6; c.beginPath(); c.arc(ex, ey, er + 3, 0, 7); c.stroke();
+    // terrain
+    c.beginPath(); c.moveTo(0, h); for (let x = 0; x <= w; x += 3) c.lineTo(x, Y(hzAt(az0 + x / w * span))); c.lineTo(w, h); c.closePath();
+    const tg = c.createLinearGradient(0, base - 5 * sc, 0, h); tg.addColorStop(0, '#565c70'); tg.addColorStop(0.5, '#23283a'); tg.addColorStop(1, '#0a0d18'); c.fillStyle = tg; c.fill();
+    const rim = c.createLinearGradient(sunX - w * 0.35, 0, sunX + w * 0.35, 0); rim.addColorStop(0, '#fff4d600'); rim.addColorStop(0.5, '#fff4d6'); rim.addColorStop(1, '#fff4d600'); c.strokeStyle = rim; c.lineWidth = 1.6;
+    c.beginPath(); for (let x = 0; x <= w; x += 3) { const y = Y(hzAt(az0 + x / w * span)); x ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+    // keep the headline readable
+    const lg = c.createLinearGradient(0, 0, w * 0.7, 0); lg.addColorStop(0, '#05070ee6'); lg.addColorStop(1, '#05070e00'); c.fillStyle = lg; c.fillRect(0, 0, w * 0.7, h);
+    c.fillStyle = '#8e99b5'; c.font = '11px -apple-system,Segoe UI,sans-serif'; c.textAlign = 'right'; c.fillText(`Horizon: ${src.name}, from NASA LOLA data · motion sped up for illustration`, w - 14, h - 12); c.textAlign = 'left';
+    if (visible && !reduceMotion) raf = requestAnimationFrame(frame);
+  };
+  if ('IntersectionObserver' in window) new IntersectionObserver((en) => { visible = en[0].isIntersecting; if (visible && !raf) raf = requestAnimationFrame(frame); }).observe(hero);
+  addEventListener('resize', () => { if (!raf) raf = requestAnimationFrame(frame); });
+  raf = requestAnimationFrame(frame);
+}
+function startReveal() {
+  if (reduceMotion || !('IntersectionObserver' in window)) return;
+  document.body.classList.add('anim');
+  const io = new IntersectionObserver((en) => { for (const e of en) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.main > .panel').forEach(p => io.observe(p));
+}
+
 // ---------- update ----------
 function update(light) {
   $('#date').value = toLocalInput(st.base); $('#dur').value = st.dur; $('#slip').value = st.slip;
   $('#slipLbl').textContent = st.slip ? `+${st.slip} days → lands ${fmtDate(landMs(), true)}` : 'none';
-  $('#cursor').max = N() - 1; $('#cursor').value = st.cur;
+  if (st.cur > N() - 1) st.cur = 0;
+  $('#cursor').max = N() - 1; $('#cursor').value = st.cur; rangeFill($('#cursor')); rangeFill($('#slip')); syncEnergyInputs();
   $('#rSun').value = st.rules.minSunPct; $('#rDark').value = st.rules.maxDarkH; $('#rComm').value = st.rules.minCommPct; $('#rSunL').checked = st.rules.needSunAtLanding; $('#rEarthL').checked = st.rules.needEarthAtLanding;
   if (!light) renderSites();
-  renderCards(); drawPano(); renderCountdown(); drawTimeline(); drawCalendar(); drawMap();
-  if (!light) { renderRescue(); writeHash(); }
+  renderCards(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap();
+  if (!light) { renderRescue(); drawLm(); liveLm(); writeHash(); }
 }
 
 async function init() {
@@ -418,7 +602,7 @@ async function init() {
       <table class="vt"><tr><th>Site</th><th>Body</th><th>n</th><th>max Δel °</th><th>max Δaz °</th></tr>${val.rows.map(r => `<tr><td>${r.site}</td><td>${r.body}</td><td>${r.samples}</td><td>${r.max_el_err_deg.toFixed(5)}</td><td>${r.max_az_err_deg.toFixed(5)}</td></tr>`).join('')}</table><p class="hint">Reproduce: <code>node tools/validate_ephem.mjs</code></p>`;
   }
   await readHash();
-  setMode(st.mode); update();
-  window.addEventListener('resize', () => { clearTimeout(init.t); init.t = setTimeout(() => { drawPano(); drawTimeline(); drawCalendar(); drawMap(); }, 120); });
+  setMode(st.mode); update(); startHero(); startReveal();
+  window.addEventListener('resize', () => { clearTimeout(init.t); init.t = setTimeout(() => { drawPano(); drawTimeline(); drawEnergy(); drawCalendar(); drawLm(); drawMap(); }, 120); });
 }
 init().catch(err => { document.body.insertAdjacentHTML('afterbegin', `<p style="padding:20px;color:#ff5d6c">Earthset could not start: ${err.message}. If you opened the file directly, serve the folder over http (e.g. <code>python3 -m http.server</code>).</p>`); console.error(err); });

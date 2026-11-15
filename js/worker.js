@@ -2,7 +2,8 @@
 // spots" rescue search, computed in the browser from reduced LOLA grids.
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { Ephemeris } from './ephem.js';
-import { PolarDEM, CylDEM, TerrainStack, computeHorizon, deltaDecode, fetchGzI16 } from './terrain.js';
+import { PolarDEM, CylDEM, TerrainStack, computeHorizon, deltaDecode, fetchGzI16, offsetLL, lightMap } from './terrain.js';
+import { R_SUN } from './ephem.js';
 import { buildSeries, windowMetrics, verdict, HOUR } from './analysis.js';
 
 let eph = null, manifest = null;
@@ -39,13 +40,10 @@ onmessage = async (e) => {
     }
     if (m.type === 'nearby') {
       const T = await stackFor(m.lat);
-      const la = m.lat * D2R, lo = m.lon * D2R, cl = Math.cos(la), sl = Math.sin(la), co = Math.cos(lo), so = Math.sin(lo);
-      const up = [cl * co, cl * so, sl], east = [-so, co, 0], north = [-sl * co, -sl * so, cl], R = 1737400;
       const out = [], n = m.n, tot = (2 * n + 1) ** 2; let k = 0;
       for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) {
         const de = i * m.spacing, dn = j * m.spacing;
-        const q = [0, 1, 2].map(a => up[a] * R + east[a] * de + north[a] * dn), ql = Math.hypot(q[0], q[1], q[2]);
-        const lat = Math.asin(q[2] / ql) * R2D, lon = Math.atan2(q[1], q[0]) * R2D;
+        const { lat, lon } = offsetLL(m.lat, m.lon, de, dn);
         const hz = computeHorizon(T, lat, lon, m.mast, { nAz: 360, maxDist: 300e3, growth: 0.004 });
         const S = buildSeries(eph, { lat, lon }, hz, m.landMs, m.landMs + m.durH * HOUR, HOUR);
         const met = windowMetrics(S, 0, S.n), v = verdict(met, m.rules);
@@ -54,6 +52,19 @@ onmessage = async (e) => {
       }
       out.sort((a, b) => b.score - a.score || a.dist - b.dist);
       postMessage({ type: 'nearby', req: m.req, results: out.slice(0, 6), tested: tot, here: out.find(o => o.de === 0 && o.dn === 0) });
+      return;
+    }
+    if (m.type === 'lightmap') {
+      const T = await stackFor(m.lat);
+      const o = offsetLL(m.lat, m.lon, 0, 0), res = Math.max(m.res || 0, T.resAt(o.q[0], o.q[1], o.q[2]));
+      const v = [0, 0, 0];
+      const sunEarth = (t) => {
+        eph.pos(0, t, v); const d = Math.hypot(v[0], v[1], v[2]); const s = [v[0] / d, v[1] / d, v[2] / d], rS = Math.asin(R_SUN / d);
+        eph.pos(1, t, v); return { s, rS, e: [v[0] * 1000, v[1] * 1000, v[2] * 1000] };
+      };
+      if (!m.quiet) postMessage({ type: 'status', text: 'Casting terrain shadows…' });
+      const r = lightMap(T, m.lat, m.lon, m.mast, m.N, res, m.times, sunEarth, { maxDist: m.maxDist || 150e3, onProgress: (a, b) => { if (b > 1) postMessage({ type: 'status', text: `Casting terrain shadows… ${a}/${b} moments` }); } });
+      postMessage({ type: 'lightmap', req: m.req, ...r }, [r.lit.buffer, r.comm.buffer, r.h.buffer]);
       return;
     }
   } catch (err) { postMessage({ type: 'error', req: m.req, text: String(err && err.message || err) }); }

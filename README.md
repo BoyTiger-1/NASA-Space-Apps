@@ -8,7 +8,9 @@ direct line to Earth — and what do we do if the launch slips?*
 It shows the Sun and Earth over the **real terrain horizon** at any lunar landing site, compares up to four
 sites side by side, turns two years of geometry into a GO / NO-GO **landing-window calendar**, and when a
 schedule slip breaks the plan it searches for a later date, a better site, or a better spot a few hundred
-metres away.
+metres away. It also casts **real shadows across the terrain** around a site (live, as the mission plays, or
+averaged over the mission), runs a simple **battery survival model** on the actual lighting, and has a
+**60-second guided tour**.
 
 Everything runs in the browser. No server, no login, no API keys.
 
@@ -22,7 +24,9 @@ Everything runs in the browser. No server, no login, no API keys.
 | Blue Ghost Mission 1, 14 Mar 2025 eclipse: end of totality | Earthset 08:34 UTC; lander photographed the "diamond ring" ≈ 08:30 UTC |
 | Blue Ghost Mission 1, lunar sunset 16 Mar 2025 | Earthset 20:23 UTC; Firefly's reports imply ≈ 18:15 UTC (≈ 2 h, about 1° of Sun elevation) |
 
-Reproduce: `node tools/validate_ephem.mjs`, `node tools/check_terrain.mjs`, `node tools/check_events.mjs`.
+| Automated test suite (`node tools/test.mjs`, no network needed) | 28 of 28 checks pass |
+
+Reproduce: `node tools/test.mjs`, `node tools/validate_ephem.mjs`, `node tools/check_terrain.mjs`, `node tools/check_events.mjs`.
 
 ## How it works
 
@@ -37,6 +41,10 @@ Reproduce: `node tools/validate_ephem.mjs`, `node tools/check_terrain.mjs`, `nod
    covered by Earth during eclipses. Earth is "in view" when its centre clears the terrain.
 4. **Windows** — `js/analysis.js` scores hourly geometry against adjustable mission rules (minimum sunlit time,
    longest survivable darkness, minimum Earth-link time, Sun/Earth at touchdown).
+5. **Shadow map** — `lightMap` in `js/terrain.js` marches from every pixel of a grid around the site toward the
+   Sun and toward Earth, using each pixel's own local vertical, to find what is lit and what has a link.
+6. **Battery model** — `simulateEnergy` in `js/analysis.js`: array output scales with the visible fraction of the
+   Sun; the lander sleeps when the Sun is hidden. Deliberately simple, with example values the user can change.
 
 ## Run locally
 
@@ -57,6 +65,9 @@ node tools/validate_ephem.mjs
 ## Limits
 
 - Lighting and direct-to-Earth line of sight only: no thermal, slope, hazard, relay-satellite or ground-station modelling.
+- The battery model is a teaching-level energy balance with example numbers, not a model of any real spacecraft.
+- The shadow map considers terrain within 150 km and approximates partial sunlight linearly across the Sun's disc.
+- The hero animation uses a real LOLA horizon, but its motion is sped up for illustration.
 - Custom sites and the nearby search use reduced-resolution terrain; treat them as screening.
 - LOLA grids contain interpolated gaps, especially away from the poles.
 - Some South Pole entries are illustrative points inside NASA's Artemis III candidate regions; NASA has not published site coordinates. These are labelled in the app.

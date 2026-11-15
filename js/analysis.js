@@ -106,6 +106,26 @@ export function calendar(S, durH, everyH = 24, rules = DEFAULT_RULES) {
   return C;
 }
 
+// Simple lander energy model over the window [i0, i1): a battery charged by a
+// solar array and drained by the lander. `cfg`: arrayW (output in full Sun),
+// loadW (awake), sleepW (when the Sun is hidden), battWh, tracking (true = the
+// array faces the Sun; false = flat on the deck). Returns state of charge 0..1.
+export function simulateEnergy(S, i0, i1, cfg) {
+  i0 = Math.max(0, i0); i1 = Math.min(S.n, i1);
+  const n = i1 - i0, soc = new Float32Array(n), hStep = S.step / HOUR, cap = Math.max(1, cfg.battWh);
+  let e = cap * (cfg.startSoc == null ? 1 : cfg.startSoc), dead = -1, deadH = 0, min = 1, gen = 0;
+  for (let k = 0; k < n; k++) {
+    const i = i0 + k, vis = S.sunVis[i];
+    const pin = cfg.arrayW * vis * (cfg.tracking ? 1 : Math.max(0, Math.sin(S.sunEl[i] / R2D)));
+    const load = vis >= LIT_MIN ? cfg.loadW : cfg.sleepW;
+    gen += pin * hStep;
+    e += (pin - load) * hStep; if (e > cap) e = cap;
+    if (e <= 0) { e = 0; deadH += hStep; if (dead < 0) dead = k; }
+    soc[k] = e / cap; if (soc[k] < min) min = soc[k];
+  }
+  return { soc, deadAtH: dead < 0 ? null : dead * hStep, deadH, minSoc: min, generatedWh: gen };
+}
+
 // Next change of state (rise/set) after index i for a visibility array.
 export function nextEvent(vis, i, thr) {
   const up = vis[i] >= thr;

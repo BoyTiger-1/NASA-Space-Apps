@@ -20,6 +20,7 @@
   b { color: #fff; } .sun { color: var(--sun); } .earth { color: var(--earth); } .go { color: var(--go); } .nogo { color: var(--nogo); }
   img { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
   .two { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 4vw; align-items: center; }
+  .two.wide { grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); } .two.wide + .fine { margin-top: 1vh; }
   .txt { display: flex; flex-direction: column; gap: 2vh; }
   .stack { display: grid; gap: 1.4vh; }
   .big { font: 700 clamp(40px, 6vw, 84px)/1 ui-monospace, Menlo, monospace; color: var(--go); }
@@ -85,9 +86,14 @@
 
 <section>
   <div class="k">Rescue the mission</div>
-  <h2>A later date, another site, or a spot a few hundred metres away.</h2>
-  <img src="img/rescue.png" alt="Rescue panel listing the next GO date, other sites ranked for the same date, and nearby spots tested on the LOLA grid">
-  <p>Near the pole, small moves matter: at the Shackleton–de Gerlache ridge, two points <b>80 m apart</b> get <b>64%</b> and <b>86%</b> sunlight over 16 years. Earthset traces new terrain horizons live in the browser to find the better spot.</p>
+  <h2>A later date, another site — or a better-lit spot nearby.</h2>
+  <div class="two wide">
+    <div class="stack">
+      <img src="img/rescue.png" alt="Rescue panel listing the next GO date, other sites ranked for the same date, and nearby spots tested on the LOLA grid">
+      <p>Earthset casts real shadows over LOLA terrain, pixel by pixel, to map where sunlight falls across the whole mission. Press Play and the shadows sweep across the ground. At the Shackleton–de Gerlache ridge, two points <b>80 m apart</b> get <b>64%</b> and <b>86%</b> sunlight over 16 years.</p>
+    </div>
+    <img src="img/shadow_mission.png" alt="Mission-average sunlight map around the Shackleton connecting ridge, bright on the ridge and dark inside Shackleton crater">
+  </div>
   <div class="n">5 / 7</div>
 </section>
 
@@ -111,13 +117,13 @@
 
 <section>
   <div class="k">Where this goes</div>
-  <h2>Minutes instead of days when the schedule changes.</h2>
+  <h2>From sunlight to survival — in minutes, not days.</h2>
+  <img src="img/energy.png" alt="Battery model panel: state of charge over the mission for three sites, one surviving and two running out of power">
   <div class="stats">
-    <div><div class="v">Planners</div><small>Science and engineering teams compare site–date options together, and share a scenario as a link.</small></div>
-    <div><div class="v">Educators</div><small>Students watch the Sun skim the horizon and see why the south pole is so hard.</small></div>
-    <div><div class="v">Next</div><small>Full-resolution terrain everywhere, relay-satellite links, thermal limits, and rover traverses between lit spots.</small></div>
+    <div><div class="v">Planners</div><small>Compare site–date options, test a lander's battery on the real lighting, share any scenario as a link.</small></div>
+    <div><div class="v">Educators</div><small>A 60-second guided tour and plain-language mode show why the south pole is so demanding.</small></div>
+    <div><div class="v">Next</div><small>Full-resolution terrain everywhere, relay satellites, thermal limits, rover traverses between lit spots.</small></div>
   </div>
-  <p>It runs entirely in a browser, with no server or login, so anyone can use it.</p>
   <p class="fine">Use of SI tools: code and text were written with the assistance of an SI coding tool (Claude), directed and reviewed by the team. All figures are computed from NASA data; images are screenshots of the working app, with map imagery rendered from LOLA elevation data. No SI-generated images, video or audio. Not an official NASA product.</p>
   <div class="n">7 / 7</div>
 </section>
