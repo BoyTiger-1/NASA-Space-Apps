@@ -1,0 +1,24 @@
+{
+ "generator": "tools/build_ephem.py (SI-assisted code)",
+ "source": "NASA/JPL DE440 (de440s.bsp), moon_pa_de440_200625.bpc, moon_de440_250416.tf via SPICE",
+ "frame": "MOON_ME (mean Earth / polar axis), km",
+ "correction": "LT+S, observer = Moon centre",
+ "start_tdb": "2024-01-01T00:00:00",
+ "et0": 757339200.0,
+ "seg_seconds": 345600.0,
+ "nseg": 1461,
+ "ncoef": 14,
+ "bodies": [
+  "SUN",
+  "EARTH"
+ ],
+ "layout": "[seg][body][xyz][coef] float32 LE",
+ "fit_max_error_arcsec": [
+  0.012661156187356845,
+  0.008888334562407344
+ ],
+ "fit_max_error_km": [
+  9.316025425037276,
+  0.015866160763648912
+ ]
+}

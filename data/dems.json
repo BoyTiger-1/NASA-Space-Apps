@@ -1,0 +1,40 @@
+{
+ "generator": "tools/build_dems.mjs (SI-assisted code)",
+ "source": "NASA LRO LOLA GDR (block-averaged)",
+ "dems": [
+  {
+   "file": "sp85_120m.i16.gz",
+   "n": 2528,
+   "m": 2528,
+   "type": "polar",
+   "pole": -1,
+   "res": 120,
+   "latLimit": 85
+  },
+  {
+   "file": "sp75_480m.i16.gz",
+   "n": 1906,
+   "m": 1906,
+   "type": "polar",
+   "pole": -1,
+   "res": 480,
+   "latLimit": 75
+  },
+  {
+   "file": "np75_480m.i16.gz",
+   "n": 1906,
+   "m": 1906,
+   "type": "polar",
+   "pole": 1,
+   "res": 480,
+   "latLimit": 75
+  },
+  {
+   "file": "global_8ppd.i16.gz",
+   "n": 2880,
+   "m": 1440,
+   "type": "cyl",
+   "ppd": 8
+  }
+ ]
+}

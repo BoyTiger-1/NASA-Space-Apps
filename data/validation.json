@@ -1,0 +1,166 @@
+{
+ "reference": "NASA/JPL Horizons API (ssd.jpl.nasa.gov), airless apparent az/el, 3-hour steps",
+ "spans": [
+  [
+   "2025-01-01",
+   "2025-03-01"
+  ],
+  [
+   "2027-06-01",
+   "2027-08-01"
+  ],
+  [
+   "2031-01-01",
+   "2031-03-01"
+  ],
+  [
+   "2038-10-01",
+   "2038-12-01"
+  ]
+ ],
+ "total_samples": 26936,
+ "worst_error_deg": 0.00003,
+ "generated_utc": "2026-11-15T04:59:49.880Z",
+ "rows": [
+  {
+   "site": "Shackleton connecting ridge",
+   "lat": -89.45,
+   "lon": -137.31,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Shackleton connecting ridge",
+   "lat": -89.45,
+   "lon": -137.31,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00003,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00002
+  },
+  {
+   "site": "Mons Mouton (IM-2 region)",
+   "lat": -84.79,
+   "lon": 29.2,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Mons Mouton (IM-2 region)",
+   "lat": -84.79,
+   "lon": 29.2,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00003,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00002
+  },
+  {
+   "site": "Malapert A (IM-1)",
+   "lat": -80.13,
+   "lon": 1.44,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Malapert A (IM-1)",
+   "lat": -80.13,
+   "lon": 1.44,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00003,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00002
+  },
+  {
+   "site": "Apollo 11",
+   "lat": 0.67416,
+   "lon": 23.47314,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Apollo 11",
+   "lat": 0.67416,
+   "lon": 23.47314,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00001,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00001
+  },
+  {
+   "site": "Apollo 17",
+   "lat": 20.1911,
+   "lon": 30.7723,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Apollo 17",
+   "lat": 20.1911,
+   "lon": 30.7723,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00002,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00001
+  },
+  {
+   "site": "Chang'e 4 (far side)",
+   "lat": -45.4446,
+   "lon": 177.5991,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Chang'e 4 (far side)",
+   "lat": -45.4446,
+   "lon": 177.5991,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00002,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00001
+  },
+  {
+   "site": "Lunar north pole region",
+   "lat": 89,
+   "lon": 90,
+   "body": "Sun",
+   "samples": 1924,
+   "max_el_err_deg": 0,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0
+  },
+  {
+   "site": "Lunar north pole region",
+   "lat": 89,
+   "lon": 90,
+   "body": "Earth",
+   "samples": 1924,
+   "max_el_err_deg": 0.00003,
+   "max_az_err_deg": 0,
+   "rms_el_err_deg": 0.00002
+  }
+ ]
+}

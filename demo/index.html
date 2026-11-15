@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earthset — Project Demo (7 slides)</title>
+<meta name="generator" content="Slides written with the assistance of an SI tool (Claude). Screenshots are of the team's working app; no SI-generated images.">
+<style>
+  :root { --bg: #060911; --panel: #0d1320; --line: #1e2942; --text: #e9edf7; --mute: #9aa5c0; --sun: #ffc857; --earth: #5aa9ff; --go: #3ddc97; --nogo: #ff5d6c; --accent: #7fe3ff; }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font: 20px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif; }
+  section { min-height: 100vh; overflow: hidden; scroll-snap-align: start; padding: 5vh 6vw; display: flex; flex-direction: column; justify-content: center; gap: 2.2vh; position: relative; background: radial-gradient(1100px 500px at 80% -10%, #152040 0%, transparent 60%); border-bottom: 1px solid var(--line); }
+  .n { position: absolute; right: 3vw; bottom: 3vh; color: var(--mute); font: 14px ui-monospace, Menlo, monospace; }
+  .k { color: var(--accent); font-size: 14px; letter-spacing: .22em; text-transform: uppercase; font-weight: 600; }
+  h1 { font-size: clamp(44px, 8vw, 104px); letter-spacing: .22em; line-height: 1; }
+  h2 { font-size: clamp(28px, 4vw, 52px); line-height: 1.12; max-width: 24ch; }
+  p, li { color: #cdd5e8; max-width: 62ch; }
+  ul { padding-left: 1.1em; display: grid; gap: .5em; }
+  b { color: #fff; } .sun { color: var(--sun); } .earth { color: var(--earth); } .go { color: var(--go); } .nogo { color: var(--nogo); }
+  img { width: 100%; border-radius: 14px; border: 1px solid var(--line); display: block; }
+  .two { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 4vw; align-items: center; }
+  .txt { display: flex; flex-direction: column; gap: 2vh; }
+  .stack { display: grid; gap: 1.4vh; }
+  .big { font: 700 clamp(40px, 6vw, 84px)/1 ui-monospace, Menlo, monospace; color: var(--go); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; }
+  .stats div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 2vh 1.6vw; }
+  .stats small { color: var(--mute); display: block; font-size: 15px; margin-top: .4em; }
+  .stats .v { font: 700 clamp(24px, 3vw, 40px)/1.1 ui-monospace, Menlo, monospace; }
+  .team { color: var(--mute); font-size: 18px; } .team b { font-weight: 600; }
+  a { color: var(--accent); }
+  .fine { font-size: 14px; color: var(--mute); max-width: 90ch; }
+  @media (max-width: 900px) { .two, .stats { grid-template-columns: 1fr; } body { font-size: 17px; } }
+  @media print { html { scroll-snap-type: none; } section { page-break-after: always; min-height: 100vh; } }
+</style>
+</head>
+<body>
+
+<section>
+  <div class="k">2026 NASA Space Apps Challenge · Seattle · Lunar Landing Site Navigator</div>
+  <h1>EARTHSET</h1>
+  <h2>Know when the lights — and the link — go out.</h2>
+  <p>A landing-window navigator for the Moon: Sun and Earth over the real terrain horizon, for any site and any date, in seconds.</p>
+  <p class="team"><b>Team:</b> {{TEAM NAME}} &nbsp;·&nbsp; Ronit Agarwal, Shaurya Sahdev, Rayan Alam, Vyom Joshi</p>
+  <div class="n">1 / 7</div>
+</section>
+
+<section>
+  <div class="two">
+    <div class="txt">
+      <div class="k">The problem</div>
+      <h2>At the lunar south pole, the Sun never climbs higher than about 1.5°.</h2>
+      <ul>
+        <li>Every hill and crater rim decides whether a lander has <b class="sun">power</b> and a direct <b class="earth">radio link to Earth</b>.</li>
+        <li>Launch dates slip. When they do, planners must re-check every site and date.</li>
+        <li>The tools that can answer this (Quickmap, Moon Trek, JPL Horizons) are built for specialists and answer one case at a time.</li>
+      </ul>
+    </div>
+    <img src="img/sky.png" alt="Earthset panorama: 360 degree terrain horizon at the Shackleton connecting ridge with the Sun grazing the horizon and Earth above it">
+  </div>
+  <div class="n">2 / 7</div>
+</section>
+
+<section>
+  <div class="k">What you do</div>
+  <h2>Pick sites. Pick a date. Read the answer.</h2>
+  <img src="img/cards_go.png" alt="Three site cards showing GO verdicts with sunlit percentage, Earth link percentage and longest darkness">
+  <div class="two">
+    <p>Compare up to four sites: past landings, CLPS targets, south-pole candidates, or any coordinates you click on the map. Each card gives a plain-language verdict against <b>your</b> mission rules.</p>
+    <p>Explorer mode explains everything for students and the public; Planner mode adds the numbers, a shareable link and CSV export.</p>
+  </div>
+  <div class="n">3 / 7</div>
+</section>
+
+<section>
+  <div class="k">The moment it matters</div>
+  <h2>The launch slips 20 days. All three sites go from <span class="go">GO</span> to <span class="nogo">NO-GO</span>.</h2>
+  <div class="stack">
+    <img src="img/controls_slip.png" alt="Controls with the launch slip slider set to plus 20 days">
+    <img src="img/cards_slip.png" alt="The same three site cards after a 20 day slip, now all NO-GO">
+    <img src="img/calendar.png" alt="Landing-window calendar: two years of possible landing days per site coloured GO, marginal or NO-GO">
+  </div>
+  <div class="n">4 / 7</div>
+</section>
+
+<section>
+  <div class="k">Rescue the mission</div>
+  <h2>A later date, another site, or a spot a few hundred metres away.</h2>
+  <img src="img/rescue.png" alt="Rescue panel listing the next GO date, other sites ranked for the same date, and nearby spots tested on the LOLA grid">
+  <p>Near the pole, small moves matter: at the Shackleton–de Gerlache ridge, two points <b>80 m apart</b> get <b>64%</b> and <b>86%</b> sunlight over 16 years. Earthset traces new terrain horizons live in the browser to find the better spot.</p>
+  <div class="n">5 / 7</div>
+</section>
+
+<section>
+  <div class="two">
+    <div class="txt">
+      <div class="k">NASA data makes it possible — and checkable</div>
+      <div class="big">0.00003°</div>
+      <p>Worst difference from <b>NASA/JPL Horizons</b> across 26,936 Sun and Earth positions (7 sites, 2025–2038).</p>
+      <ul>
+        <li><b>NASA/JPL DE440 + SPICE</b> lunar orientation: where the Sun and Earth are.</li>
+        <li><b>NASA LRO LOLA</b> laser altimetry (20 m grids at the pole): the real horizon, traced in 720 directions out to 450 km.</li>
+        <li><b>Real-mission check:</b> for Blue Ghost's site, Earthset puts the end of the 14 Mar 2025 eclipse at 08:34 UTC; the lander photographed the “diamond ring” at about 08:30.</li>
+        <li>Landing coordinates from NASA, <b>ISRO</b> (Chandrayaan-3) and <b>JAXA</b> (SLIM).</li>
+      </ul>
+    </div>
+    <img src="img/map.png" alt="Shaded relief map of the lunar south pole rendered from LOLA data with landing sites and Sun and Earth directions">
+  </div>
+  <div class="n">6 / 7</div>
+</section>
+
+<section>
+  <div class="k">Where this goes</div>
+  <h2>Minutes instead of days when the schedule changes.</h2>
+  <div class="stats">
+    <div><div class="v">Planners</div><small>Science and engineering teams compare site–date options together, and share a scenario as a link.</small></div>
+    <div><div class="v">Educators</div><small>Students watch the Sun skim the horizon and see why the south pole is so hard.</small></div>
+    <div><div class="v">Next</div><small>Full-resolution terrain everywhere, relay-satellite links, thermal limits, and rover traverses between lit spots.</small></div>
+  </div>
+  <p>It runs entirely in a browser, with no server or login, so anyone can use it.</p>
+  <p class="fine">Use of SI tools: code and text were written with the assistance of an SI coding tool (Claude), directed and reviewed by the team. All figures are computed from NASA data; images are screenshots of the working app, with map imagery rendered from LOLA elevation data. No SI-generated images, video or audio. Not an official NASA product.</p>
+  <div class="n">7 / 7</div>
+</section>
+
+<script>
+  // arrow-key navigation between slides
+  addEventListener('keydown', (e) => {
+    const s = [...document.querySelectorAll('section')], i = Math.round(scrollY / innerHeight);
+    if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); s[Math.min(s.length - 1, i + 1)].scrollIntoView(); }
+    if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); s[Math.max(0, i - 1)].scrollIntoView(); }
+  });
+</script>
+</body>
+</html>
