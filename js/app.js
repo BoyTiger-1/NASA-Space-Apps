@@ -4,6 +4,7 @@ import { loadEphemeris, makeSite, azel, subPoint, R_SUN, R_EARTH, R_MOON } from 
 import { horizonAt, discVisible, offsetLL } from './terrain.js';
 import { STATIONS, MASK_DEG, stationsInView } from './earthside.js';
 import { createRelief } from './relief3d.js';
+import { getKey, setKey, aiParse, aiExplain } from './ai.js';
 import { buildSeries, windowMetrics, verdict, calendar, nextEvent, simulateEnergy, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
 
 const $ = (q) => document.querySelector(q);
@@ -71,7 +72,7 @@ function renderSites() {
     }
     h += '</div>';
   }
-  $('#siteList').innerHTML = h;
+  $('#siteList').innerHTML = h; $('#sitesN').textContent = st.sel.length;
 }
 $('#siteList').addEventListener('click', (e) => {
   const row = e.target.closest('.site'); if (!row) return; const id = row.dataset.id;
@@ -122,8 +123,8 @@ function renderCards() {
         <div><b data-k="${id}:sun" data-v="${m.sunPct}" data-f="pct"></b><i class="meter" style="--m:var(--sun)"><i class="mfill" data-k="${id}:sunm" data-v="${m.sunPct}"></i></i>sunlit</div>
         <div><b data-k="${id}:com" data-v="${m.commPct}" data-f="pct"></b><i class="meter" style="--m:var(--earth)"><i class="mfill" data-k="${id}:comm" data-v="${m.commPct}"></i></i>Earth link</div>
         <div><b data-k="${id}:dark" data-v="${m.maxDarkH}" data-f="dur"></b>longest darkness</div><div><b data-k="${id}:out" data-v="${m.maxOutageH}" data-f="dur"></b>longest link outage</div>
-        <div><b>${sl.ok ? sl.margin + (sl.open ? '+' : '') + ' d' : sl.next == null ? 'none' : sl.next + ' d'}</b>${sl.ok ? 'slip margin before this window closes' : sl.next == null ? 'GO day in the next 24 months' : 'until the next GO landing day'}</div>
-        <div><b>${sl.go}</b>of ${sl.end} landing days are GO</div>
+        <div class="planner-only"><b>${sl.ok ? sl.margin + (sl.open ? '+' : '') + ' d' : sl.next == null ? 'none' : sl.next + ' d'}</b>${sl.ok ? 'slip margin before this window closes' : sl.next == null ? 'GO day in the next 24 months' : 'until the next GO landing day'}</div>
+        <div class="planner-only"><b>${sl.go}</b>of ${sl.end} landing days are GO</div>
         <div class="planner-only"><b>${m.peakSunEl.toFixed(1)}°</b>peak Sun elevation</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
       </div>
       <p class="say">${sentence(s, m)}</p>
@@ -447,6 +448,9 @@ async function readHash() {
   }
   if (sel.length) { st.sel = sel; st.focus = focus || sel[0]; }
 }
+// a share link pasted into an already-open tab only changes the hash, so re-read it
+// (writeHash uses replaceState, which does not fire this event)
+addEventListener('hashchange', async () => { if (!eph) return; await readHash(); setMode(st.mode); st.cur = 0; nearby = null; update(); });
 
 // ---------- energy model ----------
 function drawEnergy() {
@@ -556,7 +560,7 @@ function showTour(k) {
   stopPlay(); tourK = k; const step = TOUR[k];
   if (step.run) { step.run(); nearby = null; update(); }
   document.querySelectorAll('.spot').forEach(e => e.classList.remove('spot'));
-  const el = $(step.sel); el.classList.add('spot');
+  const el = $(step.sel); revealFor(el); el.classList.add('spot');
   el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: el.offsetHeight > innerHeight * 0.7 ? 'start' : 'center' });
   $('#tour').hidden = false; $('#tourStep').textContent = `Step ${k + 1} of ${TOUR.length}`; $('#tourTitle').textContent = step.title; $('#tourText').textContent = step.text;
   $('#tourProg').style.width = ((k + 1) / TOUR.length * 100) + '%'; $('#tourBack').disabled = k === 0; $('#tourNext').textContent = k === TOUR.length - 1 ? 'Finish' : 'Next';
@@ -635,7 +639,7 @@ function startHero() {
   cv.addEventListener('pointermove', (e) => { if (!drag) return; off = drag.off + (e.clientX - drag.x) * 20 * 60e3; draw(); });
   const end = () => { drag = null; }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
   $('#liveReset').addEventListener('click', () => { off = 0; draw(); });
-  $('#heroToday').addEventListener('click', () => { st.base = clampBase(Math.floor(Date.now() / HOUR) * HOUR); st.slip = 0; st.cur = 0; nearby = null; update(); $('#tool').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); toast('Landing set to the current hour'); });
+  $('#heroToday').addEventListener('click', () => { st.base = clampBase(Math.floor(Date.now() / HOUR) * HOUR); st.slip = 0; st.cur = 0; nearby = null; setTab('answer', false); update(); $('#tool').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); toast('Landing set to the current hour'); });
   addEventListener('resize', draw);
   setInterval(() => { if (!document.hidden && !drag) draw(); }, 1000);
   draw();
@@ -672,6 +676,158 @@ function renderRank() {
 }
 $('#rank').addEventListener('click', (e) => { const id = e.target.dataset.cmp; if (!id) return; if (st.sel.length >= 4) st.sel.pop(); st.sel.push(id); st.focus = id; nearby = null; update(); });
 
+// ---------- views (tabs), sites drawer, "what is this?" help ----------
+let tab = 'answer';
+function setTab(t, scrollTo) {
+  tab = t;
+  for (const el of document.querySelectorAll('[data-tab]')) { if (el.tagName === 'BUTTON') continue; el.classList.toggle('off', el.dataset.tab !== t); }
+  for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === t);
+  if (scrollTo !== false) { const top = $('#tabs').getBoundingClientRect().top + scrollY - 130; if (scrollY > top) window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' }); }
+}
+function revealFor(el) { const h = el.closest('[data-tab]'); if (h && h.dataset.tab !== tab) setTab(h.dataset.tab, false); }
+$('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]'); if (!a || a.getAttribute('href') === '#') return;
+  const t = document.getElementById(a.getAttribute('href').slice(1)); if (!t) return;
+  e.preventDefault(); revealFor(t); requestAnimationFrame(() => t.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }));
+});
+$('#sitesBtn').addEventListener('click', (e) => { const d = $('#sitesDrawer'); d.hidden = !d.hidden; e.currentTarget.setAttribute('aria-expanded', String(!d.hidden)); if (!d.hidden) d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' }); });
+function setupHelp() {
+  for (const ex of document.querySelectorAll('.panel .explain')) {
+    const hd = ex.parentElement.querySelector('.phead'); if (!hd) continue;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'help ghost'; b.textContent = 'What is this?'; b.setAttribute('aria-expanded', 'false');
+    b.addEventListener('click', () => { const o = ex.classList.toggle('open'); b.setAttribute('aria-expanded', String(o)); b.textContent = o ? 'Hide' : 'What is this?'; });
+    hd.appendChild(b);
+  }
+}
+setupHelp(); setTab('answer', false);
+
+// ---------- AI key (optional, stays in this browser) ----------
+function syncAiUi() { const on = !!getKey(); $('#aiState').textContent = on ? 'On' : 'Off'; $('#aiState').classList.toggle('on', on); $('#aiForget').hidden = !on; $('#askMode').hidden = !on; }
+$('#aiSave').addEventListener('click', () => { const v = $('#aiKey').value.trim(); if (!v) { toast('Paste a Gemini API key first'); return; } if (!setKey(v)) { toast('This browser blocks local storage, so the key cannot be saved'); return; } $('#aiKey').value = ''; syncAiUi(); toast('AI assistant on. The key is stored only in this browser.'); });
+$('#aiForget').addEventListener('click', () => { setKey(''); syncAiUi(); toast('AI key removed from this browser'); });
+syncAiUi();
+
+// ---------- headline answer ----------
+function renderAnswer() {
+  const el = $('#answer'), list = st.sel.map(site), tot = list.length;
+  const go = list.filter(s => s._v && s._v.level === 'go'), marg = list.filter(s => s._v && s._v.level === 'marginal');
+  const planned = list.filter(s => cal(s).level[0] === 2).length;
+  const cls = go.length === tot ? 'good' : go.length + marg.length ? 'mid' : 'bad';
+  const margins = go.map(s => slipInfo(s)).filter(x => x.ok).map(x => x.margin);
+  let t = `Landing <b>${fmtDate(landMs())}</b>, ${st.dur}-day mission. `;
+  t += go.length ? `<b>${go.map(s => s.name.replace(/ \(.*/, '')).join(', ')}</b> ${go.length === 1 ? 'meets' : 'meet'} your rules. ` : 'No site meets your rules on this date. ';
+  if (st.slip) t += `At the planned date, <b>${planned} of ${tot}</b> ${tot === 1 ? 'was' : 'were'} GO: a <b>${st.slip}-day slip</b> ${go.length < planned ? 'costs you ' + (planned - go.length) + ' site' + (planned - go.length > 1 ? 's' : '') : 'did not change that'}. `;
+  else if (margins.length) { const mm = Math.min(...margins); t += mm === 0 ? 'There is no slack: a one-day slip would break at least one GO site. ' : `The plan absorbs a launch slip of up to <b>${mm}</b> day${mm === 1 ? '' : 's'} at every GO site. `; }
+  el.hidden = false;
+  el.innerHTML = `<div class="big ${cls}">${go.length}/${tot} <small>sites GO</small></div><p>${t}</p><div class="acts"><button id="cardBtn" title="Download a shareable PNG of this scenario">Download mission card</button><a class="ghost" href="#rescuePanel">Find a rescue</a></div>`;
+}
+$('#answer').addEventListener('click', (e) => { if (e.target.id === 'cardBtn') missionCard(); });
+
+// ---------- shareable mission card (PNG) ----------
+function missionCard() {
+  const W = 1200, H = 630, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#07080d'); g.addColorStop(1, '#10162a'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const rg = c.createRadialGradient(W - 120, 90, 0, W - 120, 90, 420); rg.addColorStop(0, 'rgba(255,190,90,.28)'); rg.addColorStop(1, 'rgba(255,190,90,0)'); c.fillStyle = rg; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#5aa9ff'; c.beginPath(); c.arc(64, 66, 16, 0, 7); c.fill(); c.fillStyle = '#f2f4fa'; c.font = '800 30px Archivo, sans-serif'; c.fillText('EARTHSET', 94, 78);
+  c.fillStyle = '#a3abc0'; c.font = '20px Archivo, sans-serif'; c.fillText(`Landing ${fmtDate(landMs())} · ${st.dur}-day mission${st.slip ? ` · slipped ${st.slip} d` : ''}`, 64, 128);
+  const list = st.sel.map(site); const rowH = Math.min(100, 380 / list.length);
+  list.forEach((s, k) => {
+    const y = 170 + k * rowH, m = s._m, v = s._v, col = v.level === 'go' ? '#3ddc97' : v.level === 'marginal' ? '#ffc857' : '#ff6b7a';
+    c.fillStyle = 'rgba(255,255,255,.06)'; c.beginPath(); c.roundRect(64, y, W - 128, rowH - 12, 16); c.fill();
+    c.fillStyle = col; c.fillRect(64, y + 10, 5, rowH - 32);
+    c.fillStyle = '#f2f4fa'; c.font = '700 24px Archivo, sans-serif'; c.fillText(s.name.length > 38 ? s.name.slice(0, 37) + '…' : s.name, 90, y + 38);
+    c.fillStyle = '#a3abc0'; c.font = '15px "Martian Mono", monospace'; c.fillText(fmtLL(s).replace(/  /g, ' '), 90, y + 62);
+    c.font = '700 26px "Martian Mono", monospace'; c.fillStyle = '#ffc857'; c.fillText(m.sunPct.toFixed(0) + '%', 640, y + 40); c.fillStyle = '#5aa9ff'; c.fillText(m.commPct.toFixed(0) + '%', 780, y + 40);
+    c.fillStyle = '#6f778c'; c.font = '13px Archivo, sans-serif'; c.fillText('sunlit', 640, y + 60); c.fillText('Earth link', 780, y + 60);
+    c.fillStyle = '#a3abc0'; c.font = '700 20px "Martian Mono", monospace'; c.fillText(fmtDur(m.maxDarkH), 910, y + 40); c.font = '13px Archivo, sans-serif'; c.fillStyle = '#6f778c'; c.fillText('longest dark', 910, y + 60);
+    c.fillStyle = col; c.font = '800 20px "Martian Mono", monospace'; c.textAlign = 'right'; c.fillText(v.level === 'go' ? 'GO' : v.level === 'marginal' ? 'MARGINAL' : 'NO-GO', W - 92, y + 48); c.textAlign = 'left';
+  });
+  c.fillStyle = '#6f778c'; c.font = '15px Archivo, sans-serif'; c.fillText('Sun & Earth from NASA/JPL DE440 (within 0.00003° of Horizons) · terrain from NASA LRO LOLA · Not an official NASA product', 64, H - 40);
+  c.fillText('Built for the 2026 NASA Space Apps Challenge · Lunar Landing Site Navigator', 64, H - 18);
+  cv.toBlob((b) => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'earthset-mission-card.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Mission card saved'); });
+}
+
+// ---------- ask Earthset: plain-English scenario parser (rules, no AI service) ----------
+const ALIASES = { ridge: ['connecting ridge', 'shackleton-de gerlache', 'de gerlache', 'the ridge', 'ridge'], malapert: ['malapert'], mouton: ['mons mouton', 'mouton'], im2: ['im-2', 'im 2', 'im2', 'athena'], im1: ['im-1', 'im 1', 'im1', 'odysseus'], shack: ['shackleton crater', 'shackleton'], cy3: ['chandrayaan', 'vikram'], a11: ['apollo 11', 'apollo11', 'tranquility'], a12: ['apollo 12'], a14: ['apollo 14', 'fra mauro'], a15: ['apollo 15', 'hadley'], a16: ['apollo 16', 'descartes'], a17: ['apollo 17', 'taurus'], bg1: ['blue ghost', 'firefly'], slim: ['slim', 'jaxa'], ce3: ['change 3', 'chang e 3', 'change3'], ce4: ['change 4', 'chang e 4', 'change4'], ce5: ['change 5', 'chang e 5', 'change5'], ce6: ['change 6', 'chang e 6', 'change6'] };
+const MONTHS = { jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3, may: 4, jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8, september: 8, oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11 };
+function parseAsk(raw) {
+  let q = ' ' + raw.toLowerCase().replace(/[’'`]/g, ' ').replace(/chang\s?e/g, 'change').replace(/[,;]/g, ' ') + ' ';
+  const out = { ids: [], base: null, dur: null, slip: null, best: false };
+  const pairs = []; for (const s of sites) for (const a of (ALIASES[s.id] || [s.name.toLowerCase().replace(/ *\(.*/, '')])) pairs.push([a, s.id]);
+  pairs.sort((a, b) => b[0].length - a[0].length);
+  for (const [a, id] of pairs) { const i = q.indexOf(a); if (i >= 0 && !/[a-z0-9]/.test(q[i + a.length] || ' ') && !out.ids.includes(id)) { out.ids.push(id); q = q.slice(0, i) + ' '.repeat(a.length) + q.slice(i + a.length); } }
+  if (/\b(best|safest|top|recommend|most forgiving|which site)\b/.test(q)) out.best = true;
+  let m = q.match(/\b(?:slip(?:s|ped)?|delay(?:s|ed)?|postpone[d]?)\b[^0-9]{0,12}(\d+)\s*(day|week|month)?/) || q.match(/\b(\d+)[ -]*(day|week|month)s?\s*(?:slip|delay)/);
+  if (m) { out.slip = +m[1] * (m[2] === 'week' ? 7 : m[2] === 'month' ? 30 : 1); q = q.replace(m[0], ' '); }
+  m = q.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+  let ymd = null;
+  if (m) ymd = [+m[1], +m[2] - 1, +m[3]]; else {
+    const mon = Object.keys(MONTHS).sort((a, b) => b.length - a.length).join('|');
+    let a = q.match(new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?(${mon})\\b(?:\\s+(20\\d\\d))?`)), b = q.match(new RegExp(`\\b(${mon})\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?:\\s+(20\\d\\d))?`));
+    if (a) ymd = [a[3] ? +a[3] : null, MONTHS[a[2]], +a[1]]; else if (b) ymd = [b[3] ? +b[3] : null, MONTHS[b[1]], +b[2]];
+    if (ymd) q = q.replace((a || b)[0], ' ');
+  }
+  if (ymd) { let y = ymd[0]; if (y == null) { const now = new Date(); y = now.getUTCFullYear(); if (Date.UTC(y, ymd[1], ymd[2]) < now.getTime() - DAY) y++; } out.base = Date.UTC(y, ymd[1], ymd[2]); }
+  m = q.match(/\b(\d+)[ -]*(day|week|month)s?\b(?!\s*(?:slip|delay))/) || q.match(/\b(a|one)\s+(week|month)\b/);
+  if (m) { const n = /^\d/.test(m[1]) ? +m[1] : 1; out.dur = n * (m[2] === 'week' ? 7 : m[2] === 'month' ? 28 : 1); }
+  return out;
+}
+function applyAsk(p) {
+  const bits = [];
+  if (p.base != null && !isNaN(p.base)) { st.base = clampBase(p.base); st.slip = 0; st.cur = 0; bits.push('landing ' + fmtDate(st.base, true)); }
+  if (p.dur != null && p.dur > 0) { const opts = [3, 7, 10, 14, 28, 60, 180]; st.dur = opts.reduce((a, b) => Math.abs(b - p.dur) < Math.abs(a - p.dur) ? b : a); bits.push(st.dur + '-day mission'); }
+  if (p.slip != null && p.slip >= 0) { st.slip = Math.max(0, Math.min(180, Math.round(p.slip))); bits.push(st.slip + '-day slip'); }
+  let ids = (p.ids || []).filter(id => site(id)).slice(0, 4);
+  if (!ids.length && p.best) {
+    const pool = p.pole ? sites.filter(s => s.group === 'South Pole') : sites;
+    // GO sites first, ranked by how much extra slip they absorb; if none is GO, the soonest next GO day wins.
+    const scored = pool.map(s => { const C = cal(s), d = st.slip, end = Math.min(C.count, SPAN_DAYS); if (C.level[d] === 2) { let r = 0; while (d + r + 1 < end && C.level[d + r + 1] === 2) r++; return { s, k: 1e4 + r }; } let w = d + 1; while (w < end && C.level[w] !== 2) w++; return { s, k: w < end ? -(w - d) : -1e4 }; }).sort((a, b) => b.k - a.k);
+    const goNow = scored.filter(x => x.k >= 1e4);
+    ids = (goNow.length ? goNow : scored).slice(0, 3).map(x => x.s.id);
+    bits.push(goNow.length ? `best ${p.pole ? 'south-pole ' : ''}sites for this date` : `no GO site on this date, so these are the ${p.pole ? 'south-pole ' : ''}sites closest to a GO window`);
+  }
+  if (ids.length) { st.sel = ids; st.focus = ids[0]; bits.unshift(ids.map(id => site(id).name.replace(/ \(.*/, '')).join(' + ')); }
+  if (bits.length) { nearby = null; setTab('answer', false); update(); }
+  return bits;
+}
+function askFacts() {
+  return { landing: fmtDate(landMs()), missionDays: st.dur, slipDays: st.slip, rules: { minSunlitPct: st.rules.minSunPct, maxDarkHours: st.rules.maxDarkH, minEarthLinkPct: st.rules.minCommPct },
+    sites: st.sel.map(id => { const s = site(id), m = s._m, v = s._v, sl = slipInfo(s); return { name: s.name, verdict: v.level === 'go' ? 'GO' : v.level === 'marginal' ? 'MARGINAL' : 'NO-GO', sunlitPct: Math.round(m.sunPct), earthLinkPct: Math.round(m.commPct), longestDark: fmtDur(m.maxDarkH), longestLinkOutage: fmtDur(m.maxOutageH), problems: v.fails, warnings: v.warns, ...(sl.ok ? { extraSlipDaysTolerated: sl.margin } : { daysUntilNextGoLanding: sl.next }) }; }) };
+}
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+let askN = 0;
+async function runAsk(text) {
+  const msg = $('#askMsg'), n = ++askN, key = getKey(); msg.hidden = false;
+  const show = (bits, note) => { msg.innerHTML = (bits.length ? 'Showing <b>' + bits.join(' · ') + '</b>.' : '') + (note || ''); };
+  const offline = (note) => {
+    const p = parseAsk(text), q = text.toLowerCase();
+    const bits = applyAsk({ ids: p.ids, base: p.base, dur: p.dur, slip: p.slip, best: p.best, pole: /\b(pole|polar|south)\b/.test(q) });
+    if (!bits.length) { msg.innerHTML = 'I could not find a site, date or length in that. Try <b>"Apollo 17 and IM-2 on 3 March for 10 days"</b> or <b>"best site if we slip 30 days"</b>.' + (note || ''); return false; }
+    show(bits, note); return true;
+  };
+  if (!key) { if (offline()) $('#answer').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); return; }
+  msg.innerHTML = '<span class="aiTag">AI</span> Reading your question…'; $('#askBtn').disabled = true;
+  try {
+    const now = new Date(), r = await aiParse(key, text, sites, now.toISOString().slice(0, 10));
+    if (n !== askN) return;
+    let base = null; const m = r.date && String(r.date).match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) base = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    const bits = applyAsk({ ids: r.sites || [], base, dur: r.days, slip: r.slip, best: !!r.best, pole: !!r.southPole });
+    if (!bits.length) { msg.innerHTML = '<span class="aiTag">AI</span> I could not tell which site, date or mission length you mean. Try naming a site and a date.'; return; }
+    show(bits, ' <span class="aiNote">Working out the answer…</span>');
+    $('#answer').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    let say = null, why = '';
+    try { say = await aiExplain(key, text, askFacts()); } catch (e) { why = String(e.message || e); }
+    if (n !== askN) return;
+    show(bits, say ? `<span class="aiSay"><span class="aiTag">AI</span>${esc(say)}</span><span class="aiNote">Summary written by Google Gemini from Earthset's own numbers, which are computed from NASA data.</span>` : `<span class="aiNote">Question read by Google Gemini. No AI summary this time (${esc(why.slice(0, 90))}); the verdict below is Earthset's own.</span>`);
+  } catch (err) {
+    if (n !== askN) return;
+    offline(`<span class="aiNote">The AI assistant is unavailable (${esc(String(err.message || err).slice(0, 90))}), so the offline parser was used.</span>`);
+  } finally { if (n === askN) $('#askBtn').disabled = false; }
+}
+$('#askForm').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#askIn').value.trim(); if (v) runAsk(v); });
+$('#askEx').addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { $('#askIn').value = e.target.textContent; runAsk(e.target.textContent); } });
+
 // ---------- update ----------
 function update(light) {
   $('#date').value = toLocalInput(st.base); $('#dur').value = st.dur; $('#slip').value = st.slip;
@@ -680,7 +836,7 @@ function update(light) {
   $('#cursor').max = N() - 1; $('#cursor').value = st.cur; rangeFill($('#cursor')); rangeFill($('#slip')); syncEnergyInputs();
   $('#rSun').value = st.rules.minSunPct; $('#rDark').value = st.rules.maxDarkH; $('#rComm').value = st.rules.minCommPct; $('#rSunL').checked = st.rules.needSunAtLanding; $('#rEarthL').checked = st.rules.needEarthAtLanding;
   if (!light) renderSites();
-  renderCards(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap();
+  renderCards(); renderAnswer(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap();
   if (!light) { renderRescue(); drawLm(); liveLm(); writeHash(); scheduleRank();
     $('#printHead').innerHTML = `<b>Mission brief.</b> Landing ${fmtDate(landMs())}${st.slip ? ` (planned ${fmtDate(st.base, true)}, slipped ${st.slip} d)` : ''}, ${st.dur}-day mission. Rules: sunlit at least ${st.rules.minSunPct}%, darkness at most ${st.rules.maxDarkH} h, Earth link at least ${st.rules.minCommPct}%${st.rules.needSunAtLanding ? ', Sun up at touchdown' : ''}${st.rules.needEarthAtLanding ? ', Earth in view at touchdown' : ''}.<br>Reopen this scenario: ${location.href}`; }
 }
