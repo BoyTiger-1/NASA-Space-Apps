@@ -5,6 +5,7 @@ import { horizonAt, discVisible, offsetLL } from './terrain.js';
 import { STATIONS, MASK_DEG, stationsInView } from './earthside.js';
 import { createRelief } from './relief3d.js';
 import { prepSite } from './hero.js';
+import { liveCheck, liveCheckHtml } from './livecheck.js';
 import { getKey, setKey, aiMode, aiParse, aiExplain } from './ai.js';
 import { buildSeries, windowMetrics, verdict, calendar, nextEvent, simulateEnergy, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
 
@@ -83,14 +84,14 @@ $('#siteList').addEventListener('click', (e) => {
 // ---------- cards ----------
 function sentence(s, m) {
   const out = [];
-  if (m.sunPct < 0.5) out.push('The Sun never clears the surrounding terrain here during this mission, so there is no solar power at all.');
-  else if (m.toSunsetH == null) out.push('The Sun stays above the terrain for the entire mission.');
-  else if (!m.sunAtLanding) out.push(`It is dark at touchdown, and the longest stretch without sunlight is ${fmtDur(m.maxDarkH)}.`);
-  else out.push(`Sunlight is first lost ${fmtDur(m.toSunsetH)} after landing; the longest dark stretch is ${fmtDur(m.maxDarkH)}.`);
-  if (m.commPct < 0.5) out.push(Math.abs(s.lon) > 100 && Math.abs(s.lat) < 80 ? 'This is the far side: Earth never rises, so it needs a relay satellite.' : 'Earth stays hidden behind terrain the whole time, so there is no direct radio link.');
-  else if (m.toEarthsetH == null) out.push('Earth is in view the whole time, so the lander can always talk directly to Earth.');
-  else out.push(`Earth is hidden for up to ${fmtDur(m.maxOutageH)} at a time.`);
-  if (m.eclipse > 0.01) out.push(`Note: Earth passes in front of the Sun during this mission (an eclipse), covering up to ${(m.eclipse * 100).toFixed(0)}% of it.`);
+  if (m.sunPct < 0.5) out.push('The Sun never gets above the hills here, so there is no solar power at all.');
+  else if (m.toSunsetH == null) out.push('Sun the whole mission.');
+  else if (!m.sunAtLanding) out.push(`Lands in the dark. The longest night is ${fmtDur(m.maxDarkH)}.`);
+  else out.push(`First sunset ${fmtDur(m.toSunsetH)} after landing. Longest stretch in the dark: ${fmtDur(m.maxDarkH)}.`);
+  if (m.commPct < 0.5) out.push(Math.abs(s.lon) > 100 && Math.abs(s.lat) < 80 ? "Far side: Earth never comes up, so you'd need a relay satellite." : 'Hills block Earth the whole time, so there is no direct radio link.');
+  else if (m.toEarthsetH == null) out.push('Earth stays in view the whole time.');
+  else out.push(`Earth drops out of view for up to ${fmtDur(m.maxOutageH)} at a time.`);
+  if (m.eclipse > 0.01) out.push(`Heads up: Earth passes in front of the Sun during this mission and blocks up to ${(m.eclipse * 100).toFixed(0)}% of it.`);
   return out.join(' ');
 }
 const prevVals = new Map(), prevLevel = new Map();
@@ -124,7 +125,7 @@ function renderCards() {
         <div class="planner-only"><b>${m.peakSunEl.toFixed(1)}°</b>peak Sun elevation</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
       </div>
       <p class="say">${sentence(s, m)}</p>
-      ${v.fails.length ? `<p class="why">Fails: ${v.fails.join('; ')}</p>` : ''}${v.warns.length ? `<p class="why w">Watch: ${v.warns.join('; ')}</p>` : ''}
+      ${v.fails.length ? `<p class="why">Why not: ${v.fails.join('. ')}.</p>` : ''}${v.warns.length ? `<p class="why w">Close call: ${v.warns.join('. ')}.</p>` : ''}
     </article>`;
   }
   $('#cards').innerHTML = h; tweenAll($('#cards'));
@@ -312,14 +313,14 @@ function renderRescue() {
   let next = -1, best = -1; const end = Math.min(C.count, SPAN_DAYS);
   for (let d = st.slip + 1; d < end; d++) { if (next < 0 && C.level[d] === 2) next = d; if (d <= st.slip + 365 && (best < 0 || C.score[d] > C.score[best])) best = d; }
   const row = (d, lbl) => d < 0 ? '' : `<tr><td>${lbl}</td><td>${fmtDate(st.base + d * DAY, true)} <small>(+${d - st.slip} d)</small></td><td>${C.sunPct[d].toFixed(0)}% / ${C.commPct[d].toFixed(0)}%</td><td><button data-day="${d}">Land then</button></td></tr>`;
-  let a = `<div><h3>Same site, different date</h3><p>${v.level === 'go' ? 'This date already meets the rules.' : `<b>${s.name}</b> does not meet the rules on ${fmtDate(landMs(), true)}.`} ${next < 0 ? 'No fully GO date in the next 24 months with the current rules.' : ''}</p>
+  let a = `<div><h3>Same site, different date</h3><p>${v.level === 'go' ? 'This date already works.' : `<b>${s.name}</b> doesn't work on ${fmtDate(landMs(), true)}.`} ${next < 0 ? 'Nothing in the next two years works with these rules.' : ''}</p>
     <table><tr><th></th><th>Landing day</th><th>Sun / link</th><th></th></tr>${row(next, 'Next GO')}${best !== next ? row(best, 'Best in 12 mo') : ''}</table></div>`;
   // other curated sites on this date
   const others = sites.filter(q => q.id !== s.id).map(q => { const Q = buildSeries(eph, q.geom, q.hzo, landMs(), landMs() + N() * HOUR, HOUR), m = windowMetrics(Q, 0, Q.n), vv = verdict(m, st.rules); return { q, m, vv }; }).sort((x, y) => y.vv.score - x.vv.score).slice(0, 5);
-  let b = `<div><h3>Same date, other sites</h3><p>Every site in the list, ranked for a ${st.dur}-day mission landing ${fmtDate(landMs(), true)}.</p><table><tr><th>Site</th><th>Sun / link</th><th></th><th></th></tr>` +
+  let b = `<div><h3>Same date, other sites</h3><p>Every site we have, ranked for the same ${st.dur} days from ${fmtDate(landMs(), true)}.</p><table><tr><th>Site</th><th>Sun / link</th><th></th><th></th></tr>` +
     others.map(o => `<tr><td>${o.q.name}</td><td>${o.m.sunPct.toFixed(0)}% / ${o.m.commPct.toFixed(0)}%</td><td><span class="badge ${o.vv.level}">${o.vv.level === 'go' ? 'GO' : o.vv.level === 'marginal' ? 'MARG' : 'NO-GO'}</span></td><td><button data-cmp="${o.q.id}">Compare</button></td></tr>`).join('') + '</table></div>';
   const sp = Math.abs(s.lat) > 85 ? 120 : Math.abs(s.lat) > 75 ? 480 : 4000;
-  let cdiv = `<div><h3>Same date, a short drive away</h3><p>Near the poles a few hundred metres can be the difference between sunlight and darkness. Search a ${(sp * 10 / 1000).toFixed(1)} km box around this site on the LOLA grid.</p>`;
+  let cdiv = `<div><h3>Same date, a short drive away</h3><p>Near the poles, a few hundred metres can mean sun or shadow. This tests 121 spots in a ${(sp * 10 / 1000).toFixed(1)} km box around the site.</p>`;
   if (nearby && nearby.id === s.id && nearby.results) {
     const dir = (o) => { if (!o.dist) return 'here'; const brg = (Math.atan2(o.de, o.dn) * R2D + 360) % 360; return `${o.dist < 1000 ? Math.round(o.dist) + ' m' : (o.dist / 1000).toFixed(1) + ' km'} ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(brg / 45) % 8]}`; };
     cdiv += `<table><tr><th>Where</th><th>Sun / link</th><th>Dark</th><th></th></tr>` + nearby.results.map((o, k) => `<tr><td>${dir(o)}</td><td>${o.sunPct.toFixed(0)}% / ${o.commPct.toFixed(0)}%</td><td>${fmtDur(o.maxDarkH)}</td><td>${o.dist ? `<button data-near="${k}">Use</button>` : ''}</td></tr>`).join('') + `</table><p class="hint">${nearby.tested} spots tested on the ${sp} m grid${nearby.here ? `; this exact spot scores ${nearby.here.sunPct.toFixed(0)}% / ${nearby.here.commPct.toFixed(0)}% on that grid` : ''}. Screening only: confirm with full-resolution terrain.</p>`;
@@ -544,13 +545,13 @@ function liveLm() { if (lm && lm.mode === 'now' && lm.id === st.focus && !lmBusy
 const TOUR = [
   { sel: '#cards', title: 'Three sites, one landing date', text: 'These are three real places near the Moon’s south pole. For a 14-day mission landing on 15 January 2027, all three are GO: enough sunlight for power, and enough view of Earth to talk home.', run() { Object.assign(st, { sel: ['ridge', 'im2', 'malapert'], focus: 'ridge', base: Date.UTC(2027, 0, 15), slip: 0, dur: 14, cur: 0, rules: { ...DEFAULT_RULES } }); } },
   { sel: '#panoPanel', title: 'Stand on the surface', text: 'This is the true horizon around the lander, built from NASA’s LOLA laser measurements. The Sun never rises more than a degree or two here. It just circles the horizon, ducking behind hills. Watch the mission play.', after() { startPlay(); } },
-  { sel: '#cards', title: 'Then the launch slips 20 days', text: 'Same sites, same mission, three weeks later, and every one is NO-GO. Two would land in darkness; the third would land with Earth out of sight. This is the problem real mission planners face.', run() { st.slip = 20; st.cur = 0; } },
+  { sel: '#cards', title: 'Then the launch slips 20 days', text: 'Same sites, same mission, three weeks later, and every one is NO-GO. Two would land in darkness; the third would land with Earth out of sight. Mission planners deal with exactly this.', run() { st.slip = 20; st.cur = 0; } },
   { sel: '#calPanel', title: 'Two years of landing days at a glance', text: 'Each column is a possible landing day, coloured by whether the mission would meet the rules. The white line is the plan; the blue line is where the slip put us. Click any green day to land then.' },
   { sel: '#rankPanel', title: 'Which site forgives a slip?', text: 'The same calendar, run for every site in the list and ranked. A site with long green stretches can absorb a delay. One with thin slivers leaves no room for error.' },
   { sel: '#rescuePanel', title: 'Rescue the mission', text: 'Earthset searches for a way out: the next good date at this site (here, just three days later), a better site for the same date, or a better-lit spot a short drive away.' },
-  { sel: '#lmPanel', title: 'Real shadows on real terrain', text: 'Now it casts shadows across the terrain around the site, pixel by pixel, and plays the mission so you can watch them sweep. With the Sun this low, a small ridge throws a shadow kilometres long. Click any bright spot to try it as a landing site, or switch to 3D relief and orbit the terrain.', after() { runLm('now').then(() => { if (tourK === TOUR.findIndex(q => q.sel === '#lmPanel')) startPlay(); }); } },
+  { sel: '#lmPanel', title: 'Real shadows on real terrain', text: 'Here it casts shadows across the ground around the site and plays the mission, so you can watch them sweep. With the Sun this low, a small ridge throws a shadow kilometres long. Click any bright spot to try it as a landing site, or switch to 3D relief and orbit the terrain.', after() { runLm('now').then(() => { if (tourK === TOUR.findIndex(q => q.sel === '#lmPanel')) startPlay(); }); } },
   { sel: '#enPanel', title: 'Sunlight becomes survival', text: 'Give the lander a solar array and a battery. The charge falls whenever terrain hides the Sun; if it reaches zero, the mission is over. Change the numbers to design a lander that survives.' },
-  { sel: '#about', title: 'Check our numbers', text: 'Every Sun and Earth position matches NASA/JPL Horizons to 0.00003°. The tool reproduces the eclipse that Blue Ghost photographed from the Moon in March 2025 to within four minutes. 28 automated checks guard the maths.' },
+  { sel: '#about', title: 'Check our numbers', text: 'Every Sun and Earth position matches NASA/JPL Horizons to 0.00003°. The tool reproduces the eclipse that Blue Ghost photographed from the Moon in March 2025 to within four minutes. 28 automated tests check the maths.' },
 ];
 function showTour(k) {
   stopPlay(); tourK = k; const step = TOUR[k];
@@ -632,6 +633,30 @@ $('#aiSave').addEventListener('click', () => { const v = $('#aiKey').value.trim(
 $('#aiForget').addEventListener('click', () => { setKey(''); syncAiUi(); toast('AI key removed from this browser'); });
 syncAiUi();
 
+// ---------- live check against NASA/JPL Horizons ----------
+$('#lcBtn').addEventListener('click', async (e) => {
+  const b = e.currentTarget, out = $('#lcOut'), s = site(st.focus); b.disabled = true; out.hidden = false;
+  out.textContent = `Asking NASA/JPL Horizons where the Sun and Earth are right now from ${s.name}…`;
+  try { out.innerHTML = liveCheckHtml(await liveCheck(eph, s), s.name); } catch (err) { out.textContent = err.message; } finally { b.disabled = false; }
+});
+
+// ---------- mission events as a calendar file (.ics) ----------
+function icsExport() {
+  const s = site(st.focus), S = series(s), i0 = L(), i1 = L() + N(), ev = [];
+  const stamp = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const spans = (test, title, note) => { let a = -1; for (let i = i0; i <= i1; i++) { const on = i < i1 && test(i); if (on && a < 0) a = i; if (!on && a >= 0) { ev.push({ a: st.base + a * HOUR, b: st.base + i * HOUR, title, note }); a = -1; } } };
+  spans(i => S.sunVis[i] < LIT_MIN, 'Lunar night at ' + s.name, 'The Sun is behind the terrain: no solar power.');
+  spans(i => S.earthVis[i] < COMM_MIN, 'No Earth link at ' + s.name, 'Earth is behind the terrain: no direct radio link.');
+  ev.push({ a: landMs(), b: landMs() + HOUR, title: 'Landing at ' + s.name, note: `${st.dur}-day mission planned with Earthset.` });
+  ev.sort((x, y) => x.a - y.a);
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Earthset//Lunar landing windows//EN', 'CALSCALE:GREGORIAN'];
+  ev.forEach((e, k) => lines.push('BEGIN:VEVENT', `UID:earthset-${s.id}-${e.a}-${k}@earthset`, `DTSTAMP:${stamp(Date.now())}`, `DTSTART:${stamp(e.a)}`, `DTEND:${stamp(e.b)}`, `SUMMARY:${e.title.replace(/[,;]/g, ' ')}`, `DESCRIPTION:${e.note.replace(/[,;]/g, ' ')} Times are UTC from NASA ephemeris and LOLA terrain.`, 'END:VEVENT'));
+  lines.push('END:VCALENDAR');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+  a.download = `earthset-${s.id}-${toLocalInput(landMs()).slice(0, 10)}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast(`${ev.length} events saved for ${s.name.replace(/ \(.*/, '')}`);
+}
+
 // ---------- headline answer ----------
 function renderAnswer() {
   const el = $('#answer'), list = st.sel.map(site), tot = list.length;
@@ -639,14 +664,16 @@ function renderAnswer() {
   const planned = list.filter(s => cal(s).level[0] === 2).length;
   const cls = go.length === tot ? 'good' : go.length + marg.length ? 'mid' : 'bad';
   const margins = go.map(s => slipInfo(s)).filter(x => x.ok).map(x => x.margin);
-  let t = `Landing <b>${fmtDate(landMs())}</b>, ${st.dur}-day mission. `;
-  t += go.length ? `<b>${go.map(s => s.name.replace(/ \(.*/, '')).join(', ')}</b> ${go.length === 1 ? 'meets' : 'meet'} your rules. ` : 'No site meets your rules on this date. ';
-  if (st.slip) t += `At the planned date, <b>${planned} of ${tot}</b> ${tot === 1 ? 'was' : 'were'} GO: a <b>${st.slip}-day slip</b> ${go.length < planned ? 'costs you ' + (planned - go.length) + ' site' + (planned - go.length > 1 ? 's' : '') : 'did not change that'}. `;
-  else if (margins.length) { const mm = Math.min(...margins); t += mm === 0 ? 'There is no slack: a one-day slip would break at least one GO site. ' : `The plan absorbs a launch slip of up to <b>${mm}</b> day${mm === 1 ? '' : 's'} at every GO site. `; }
+  const short = (x) => x.name.replace(/ \(.*/, '').replace(/^Shackleton–de Gerlache Connecting Ridge$/, 'Shackleton ridge');
+  const join = (a) => a.length < 3 ? a.join(' and ') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+  let t = `${fmtDate(landMs(), true)}, ${st.dur} days on the surface. `;
+  t += go.length ? `<b>${join(go.map(short))}</b> ${go.length === 1 ? 'works' : go.length === 2 ? 'both work' : 'all work'}. ` : 'None of these sites works on this date. ';
+  if (st.slip) t += go.length < planned ? `On the original date ${planned} of ${tot} worked, so the <b>${st.slip}-day slip</b> cost you ${planned - go.length}. ` : `The ${st.slip}-day slip didn't change anything. `;
+  else if (margins.length) { const mm = Math.min(...margins); t += mm === 0 ? "It's tight: slip by even a day and one of them stops working. " : `You can slip up to <b>${mm}</b> day${mm === 1 ? '' : 's'} and still land at all of them. `; }
   el.hidden = false;
-  el.innerHTML = `<div class="big ${cls}">${go.length}/${tot} <small>sites GO</small></div><p>${t}</p><div class="acts"><button id="cardBtn" title="Download a shareable PNG of this scenario">Download mission card</button><a class="ghost" href="#rescuePanel">Find a rescue</a></div>`;
+  el.innerHTML = `<div class="big ${cls}">${go.length}/${tot} <small>${tot === 1 ? "site is" : "sites are"} GO</small></div><p>${t}</p><div class="acts"><button id="cardBtn" title="Download a shareable PNG of this scenario">Download mission card</button><button id="icsBtn" class="ghost" title="Sunsets, sunrises and Earth-link gaps for the focused site, as a calendar file">Add to calendar</button><a class="ghost" href="#rescuePanel">Find a rescue</a></div>`;
 }
-$('#answer').addEventListener('click', (e) => { if (e.target.id === 'cardBtn') missionCard(); });
+$('#answer').addEventListener('click', (e) => { if (e.target.id === 'cardBtn') missionCard(); if (e.target.id === 'icsBtn') icsExport(); });
 
 // ---------- shareable mission card (PNG) ----------
 function missionCard() {

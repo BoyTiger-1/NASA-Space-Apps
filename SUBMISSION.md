@@ -43,6 +43,8 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 - **Printable brief.** One button turns the current scenario into a PDF.
 - **Ask Earthset.** Type a scenario in plain English ("Apollo 17 and IM-2 on 3 March for 10 days", "best site if we slip 30 days") and the app sets the sites, date, length and slip. On the hosted site, Google Gemini reads free-form questions through a small server function (the key stays on the server) and writes a two-to-three-sentence summary using only the numbers Earthset computed. Without it, a rule-based offline parser is used.
 - **Headline answer and mission card.** A one-line verdict ("2/3 sites GO; the tightest tolerates a 1-day slip") sits above the cards, and one click downloads a shareable PNG mission card.
+- **Check it live against NASA.** One button asks NASA/JPL Horizons where the Sun and Earth are right now from the site and compares it with Earthset's own answer on the spot (they agree to about 0.1 arcsecond).
+- **Mission calendar.** Sunsets, sunrises and Earth-link gaps for the planned mission download as a calendar file for Google Calendar or Outlook.
 - **Eclipses.** It also catches the hours when Earth passes in front of the Sun as seen from the Moon.
 
 **How it works**
@@ -54,7 +56,7 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 
 **How we checked it**
 
-- Against NASA/JPL Horizons at 7 sites, 2025–2038, 26,936 samples: worst difference 0.00003° in azimuth or elevation.
+- Against NASA/JPL Horizons at 7 sites, 2025–2038, 26,936 samples: worst difference 0.00003° in azimuth or elevation. Visitors can also re-run the comparison live, for the current minute, from the site.
 - Polar LOLA grids against the independent global LOLA grid: no bias, 14–20 m RMS.
 - An automated suite of 28 checks (ephemeris sanity, analytic horizon dip, eclipse geometry, shadow casting, site behaviour, battery model) passes; run `node tools/test.mjs`.
 - Against a real mission: for Blue Ghost Mission 1's site, Earthset predicts totality of the 14 March 2025 eclipse ending at 08:34 UTC (the lander photographed the "diamond ring" at about 08:30 UTC) and lunar sunset on 16 March at 20:23 UTC (Firefly's reports imply about 18:15 UTC, a difference of roughly 1° of Sun elevation on the coarser terrain grid used at that latitude).

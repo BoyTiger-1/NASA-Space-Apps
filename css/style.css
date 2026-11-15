@@ -387,3 +387,14 @@ footer { color: var(--ink3); font-size: 14px; padding: var(--s7) var(--gutter); 
   .mastNav .hideS { display: none; }
   .lsec { padding-top: var(--s8); }
 }
+/* live check */
+.lcBtns { display: flex; gap: var(--s3); flex-wrap: wrap; }
+.btn.lc { background: #ffb37a; border-color: #ffb37a; color: #1a1208; cursor: pointer; font: inherit; font-size: 16px; font-weight: 500; }
+.btn.lc:disabled { opacity: .6; }
+.lcOut { margin-top: var(--s5); font-size: 14.5px; }
+.dataBand .lcOut { color: #d8d4ca; } .dataBand .lcOut b { color: #ffb37a; }
+.lcHead { margin-bottom: var(--s2); }
+.lcT { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.lcT th, .lcT td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(128, 128, 128, .25); }
+.lcT th { font-weight: 500; opacity: .7; }
+.lcBox { margin: var(--s2) 0 var(--s4); } .lcBox .lcOut { color: var(--ink2); } .lcBox .lcOut b { color: var(--go); }

@@ -75,7 +75,9 @@ python3 -m http.server 8000      # then open http://localhost:8000  (planner: /a
    settings are needed: it is a static site plus one function, `api/ask.js`.
 2. In the project's **Settings → Environment Variables**, add `GEMINI_API_KEY` with a Google Gemini API
    key, then redeploy.
-3. The planner's Ask bar now calls `/api/ask`; the key stays on Vercel and never reaches the browser. The
+3. `api/horizons.js` (no key needed) powers the "Check it live against NASA" button: it asks NASA/JPL Horizons
+   for the current Sun and Earth position and the page compares it with Earthset's own result.
+4. The planner's Ask bar now calls `/api/ask`; the key stays on Vercel and never reaches the browser. The
    function accepts only Earthset's two request types, limits question size and rate-limits each visitor.
 
 Without the variable (or on GitHub Pages) the Ask bar uses its offline parser, and visitors can still paste

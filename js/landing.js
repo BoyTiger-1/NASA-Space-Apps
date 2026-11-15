@@ -2,6 +2,7 @@
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { loadEphemeris } from './ephem.js';
 import { startHero, prepSite } from './hero.js';
+import { liveCheck, liveCheckHtml } from './livecheck.js';
 
 document.querySelector('#landAsk').addEventListener('submit', (e) => {
   const v = e.target.q.value.trim(); if (!v) { e.preventDefault(); location.href = 'app.html'; }
@@ -12,5 +13,11 @@ document.querySelector('#landAsk').addEventListener('submit', (e) => {
     const [eph, sj] = await Promise.all([loadEphemeris('data/'), fetch('data/sites.json').then(r => r.json())]);
     const src = sj.sites.find(s => s.id === 'ridge') || sj.sites[0];
     startHero(eph, prepSite(src));
+    const btn = document.querySelector('#lcBtn'), out = document.querySelector('#lcOut');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; out.hidden = false; out.textContent = 'Asking NASA/JPL Horizons where the Sun and Earth are right now…';
+      try { out.innerHTML = liveCheckHtml(await liveCheck(eph, src), 'the Shackleton ridge'); }
+      catch (e) { out.textContent = e.message; } finally { btn.disabled = false; }
+    });
   } catch (err) { console.error(err); document.querySelector('#live').hidden = true; }
 })();

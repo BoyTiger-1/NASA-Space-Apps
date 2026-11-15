@@ -79,11 +79,11 @@ export function windowMetrics(S, i0, i1) {
 // GO / MARGINAL / NO-GO against the planner's rules.
 export function verdict(m, rules = DEFAULT_RULES) {
   const fails = [], warns = [];
-  if (rules.needSunAtLanding && !m.sunAtLanding) fails.push('Sun is below the terrain horizon at touchdown');
-  if (rules.needEarthAtLanding && !m.earthAtLanding) fails.push('Earth is not in view at touchdown (no direct link)');
-  if (m.sunPct < rules.minSunPct) (m.sunPct < rules.minSunPct * 0.8 ? fails : warns).push(`sunlit ${m.sunPct.toFixed(0)}% of the mission (need ${rules.minSunPct}%)`);
-  if (m.maxDarkH > rules.maxDarkH) (m.maxDarkH > rules.maxDarkH * 1.5 ? fails : warns).push(`${fmtDur(m.maxDarkH)} of continuous darkness (limit ${fmtDur(rules.maxDarkH)})`);
-  if (m.commPct < rules.minCommPct) (m.commPct < rules.minCommPct * 0.8 ? fails : warns).push(`Earth link ${m.commPct.toFixed(0)}% of the mission (need ${rules.minCommPct}%)`);
+  if (rules.needSunAtLanding && !m.sunAtLanding) fails.push('Lands in the dark');
+  if (rules.needEarthAtLanding && !m.earthAtLanding) fails.push("Can't see Earth on landing, so no radio link");
+  if (m.sunPct < rules.minSunPct) (m.sunPct < rules.minSunPct * 0.8 ? fails : warns).push(`Only ${m.sunPct.toFixed(0)}% sunlight (you asked for ${rules.minSunPct}%)`);
+  if (m.maxDarkH > rules.maxDarkH) (m.maxDarkH > rules.maxDarkH * 1.5 ? fails : warns).push(`${fmtDur(m.maxDarkH)} of darkness in a row (it can only last ${fmtDur(rules.maxDarkH)})`);
+  if (m.commPct < rules.minCommPct) (m.commPct < rules.minCommPct * 0.8 ? fails : warns).push(`Earth in view only ${m.commPct.toFixed(0)}% of the time (you asked for ${rules.minCommPct}%)`);
   const level = fails.length ? 'nogo' : warns.length ? 'marginal' : 'go';
   // 0..100 score used for ranking alternatives
   const score = Math.max(0, Math.min(100,

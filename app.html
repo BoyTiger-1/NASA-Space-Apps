@@ -64,7 +64,7 @@
 
 
 
-<div class="secHead" id="planner"><p class="kicker">The planner</p><h2 class="askTitle">Your mission, <em>at a glance.</em></h2><p class="sub">Pick a date and up to four sites. Each tab answers one question.</p></div>
+<div class="secHead" id="planner"><p class="kicker">The planner</p><h2 class="askTitle">Your mission, <em>at a glance.</em></h2><p class="sub">Pick a date and up to four sites. Each tab below answers one question.</p></div>
 <div class="dock">
 <section class="controls" id="tool" aria-label="Mission controls">
   <label>Planned landing (UTC)<input type="datetime-local" id="date" step="3600"></label>
@@ -215,6 +215,7 @@
         </div>
         <div>
           <h3>Checked against NASA/JPL Horizons</h3>
+          <div class="lcBox"><button id="lcBtn" class="ghost">Check it live, right now</button><div id="lcOut" class="lcOut" hidden aria-live="polite"></div></div>
           <div id="valid"></div>
           <h3>Checked against a real mission</h3>
           <p>Firefly's Blue Ghost Mission 1 (NASA CLPS) sat in Mare Crisium in March 2025. Earthset, run for that site, predicts Earth fully covering the Sun on 14 March 2025 until <b>08:34 UTC</b>. Blue Ghost photographed the "diamond ring" as totality ended at about 08:30 UTC (3:30 a.m. CDT). It predicts the last sliver of Sun setting on 16 March at <b>20:23 UTC</b>. Firefly reported its final downlink at 23:15 UTC after roughly five hours of lunar night, which puts sunset near 18:15 UTC. That is agreement to about two hours (about 1° of Sun elevation), reasonable given the 474 m terrain grid used at that latitude and the approximate landing coordinates. Reproduce: <code>node tools/check_events.mjs</code></p>
