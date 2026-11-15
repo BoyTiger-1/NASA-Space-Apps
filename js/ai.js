@@ -7,7 +7,7 @@
 // SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 // Try the main model first; if it is rate-limited or busy, fall back to the lighter one.
-const MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+const MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
 const URL_ = (model, key) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
 const STORE = 'earthset.aikey';
 
@@ -21,7 +21,7 @@ async function call1(model, key, prompt, schema, ms) {
     if (schema) { body.generationConfig.responseMimeType = 'application/json'; body.generationConfig.responseSchema = schema; }
     const r = await fetch(URL_(model, key), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctl.signal });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error(r.status === 429 ? 'the free AI quota is used up for now, try again in a minute' : r.status === 400 || r.status === 403 ? 'the API key was not accepted' : (j.error && j.error.message) || 'HTTP ' + r.status); e.status = r.status; throw e; }
+    if (!r.ok) { const e = new Error(r.status === 429 ? 'the free AI quota is used up for now, try again in a minute' : r.status === 400 || r.status === 403 ? 'the API key was not accepted' : r.status >= 500 ? 'the AI service is busy right now' : 'AI error ' + r.status); e.status = r.status; throw e; }
     const txt = (((j.candidates || [])[0] || {}).content || { parts: [] }).parts.map(p => p.text || '').join('').trim();
     if (!txt) throw new Error('empty reply');
     return schema ? JSON.parse(txt) : txt;
@@ -40,7 +40,7 @@ async function call(key, prompt, schema, ms = 15000) {
 const PARSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
-    sites: { type: 'ARRAY', items: { type: 'STRING' }, description: 'site ids from the list, max 4, in the order mentioned' },
+    sites: { type: 'ARRAY', items: { type: 'STRING' }, description: 'ids of sites the user explicitly named, max 4, in the order mentioned; empty if the user asks for a recommendation without naming sites' },
     date: { type: 'STRING', nullable: true, description: 'landing date YYYY-MM-DD, or null if not given' },
     days: { type: 'INTEGER', nullable: true, description: 'mission length in days, or null' },
     slip: { type: 'INTEGER', nullable: true, description: 'launch slip / delay in days, or null' },
@@ -57,7 +57,7 @@ export function aiParse(key, question, sites, todayIso) {
 Available sites (id: name):
 ${list}
 
-Rules: only use ids from the list. Dates without a year mean the next such date after today. "two weeks" = 14 days, "a month" = 28 days. A "slip" or "delay" is days added to the planned landing date. Leave fields null if the question does not say.
+Rules: only use ids from the list. Put a site in "sites" only if the user names it; for "which is best/safest" questions leave "sites" empty and set best=true (and southPole=true if they mean the south pole). Dates without a year mean the next such date after today. "two weeks" = 14 days, "a month" = 28 days. A "slip" or "delay" is days added to the planned landing date. Leave fields null if the question does not say.
 
 Question: ${question}`;
   return call(key, prompt, PARSE_SCHEMA);

@@ -574,7 +574,7 @@ addEventListener('keydown', (e) => { if (tourK < 0) return; if (e.key === 'Escap
 
 // ---------- live hero: the real sky over the ridge, this minute ----------
 function startHero() {
-  const cv = $('#heroCv'), hero = $('#hero'), src = site('ridge') || sites[0], hz = src.hzo, o = {};
+  const cv = $('#heroCv'), hero = $('#heroWin'), src = site('ridge') || sites[0], hz = src.hzo, o = {};
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const stars = Array.from({ length: 220 }, () => ({ x: rnd(), y: rnd() * 0.72, a: 0.2 + rnd() * 0.6, r: rnd() < 0.12 ? 2 : 1 }));
   let off = 0, drag = null, G = null;
@@ -639,7 +639,7 @@ function startHero() {
   cv.addEventListener('pointermove', (e) => { if (!drag) return; off = drag.off + (e.clientX - drag.x) * 20 * 60e3; draw(); });
   const end = () => { drag = null; }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
   $('#liveReset').addEventListener('click', () => { off = 0; draw(); });
-  $('#heroToday').addEventListener('click', () => { st.base = clampBase(Math.floor(Date.now() / HOUR) * HOUR); st.slip = 0; st.cur = 0; nearby = null; setTab('answer', false); update(); $('#tool').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); toast('Landing set to the current hour'); });
+  $('#heroToday').addEventListener('click', () => { st.base = clampBase(Math.floor(Date.now() / HOUR) * HOUR); st.slip = 0; st.cur = 0; nearby = null; setTab('answer', false); update(); $('#planner').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' }); toast('Landing set to the current hour'); });
   addEventListener('resize', draw);
   setInterval(() => { if (!document.hidden && !drag) draw(); }, 1000);
   draw();
@@ -682,7 +682,7 @@ function setTab(t, scrollTo) {
   tab = t;
   for (const el of document.querySelectorAll('[data-tab]')) { if (el.tagName === 'BUTTON') continue; el.classList.toggle('off', el.dataset.tab !== t); }
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === t);
-  if (scrollTo !== false) { const top = $('#tabs').getBoundingClientRect().top + scrollY - 130; if (scrollY > top) window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' }); }
+  if (scrollTo !== false) { const top = $('#tabs').getBoundingClientRect().top + scrollY - 90; if (scrollY > top) window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' }); }
 }
 function revealFor(el) { const h = el.closest('[data-tab]'); if (h && h.dataset.tab !== tab) setTab(h.dataset.tab, false); }
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setTab(b.dataset.tab); });
@@ -778,15 +778,17 @@ function applyAsk(p) {
   if (p.base != null && !isNaN(p.base)) { st.base = clampBase(p.base); st.slip = 0; st.cur = 0; bits.push('landing ' + fmtDate(st.base, true)); }
   if (p.dur != null && p.dur > 0) { const opts = [3, 7, 10, 14, 28, 60, 180]; st.dur = opts.reduce((a, b) => Math.abs(b - p.dur) < Math.abs(a - p.dur) ? b : a); bits.push(st.dur + '-day mission'); }
   if (p.slip != null && p.slip >= 0) { st.slip = Math.max(0, Math.min(180, Math.round(p.slip))); bits.push(st.slip + '-day slip'); }
-  let ids = (p.ids || []).filter(id => site(id)).slice(0, 4);
-  if (!ids.length && p.best) {
-    const pool = p.pole ? sites.filter(s => s.group === 'South Pole') : sites;
+  let ids = (p.ids || []).filter(id => site(id));
+  if (p.best) {
+    // rank among the sites the user named, or among all (polar) sites
+    const pool = ids.length ? ids.map(site) : p.pole ? sites.filter(s => s.group === 'South Pole') : sites;
     // GO sites first, ranked by how much extra slip they absorb; if none is GO, the soonest next GO day wins.
     const scored = pool.map(s => { const C = cal(s), d = st.slip, end = Math.min(C.count, SPAN_DAYS); if (C.level[d] === 2) { let r = 0; while (d + r + 1 < end && C.level[d + r + 1] === 2) r++; return { s, k: 1e4 + r }; } let w = d + 1; while (w < end && C.level[w] !== 2) w++; return { s, k: w < end ? -(w - d) : -1e4 }; }).sort((a, b) => b.k - a.k);
     const goNow = scored.filter(x => x.k >= 1e4);
     ids = (goNow.length ? goNow : scored).slice(0, 3).map(x => x.s.id);
     bits.push(goNow.length ? `best ${p.pole ? 'south-pole ' : ''}sites for this date` : `no GO site on this date, so these are the ${p.pole ? 'south-pole ' : ''}sites closest to a GO window`);
   }
+  ids = ids.slice(0, 4);
   if (ids.length) { st.sel = ids; st.focus = ids[0]; bits.unshift(ids.map(id => site(id).name.replace(/ \(.*/, '')).join(' + ')); }
   if (bits.length) { nearby = null; setTab('answer', false); update(); }
   return bits;

@@ -9,6 +9,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%230b0b0a'/%3E%3Ccircle cx='20' cy='23' r='11' fill='%2358a6ff'/%3E%3Cpath d='M0 26 L9 23 L15 27 L24 22 L31 26 L40 24 L40 40 L0 40Z' fill='%23efece4'/%3E%3C/svg%3E">
 <link rel="preload" href="fonts/archivo-wdth.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/martianmono.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body id="top">
@@ -39,14 +41,15 @@
 </header>
 
 <section class="hero" id="hero">
-  <canvas id="heroCv" aria-label="Live view of the Sun and Earth over the terrain horizon at the Shackleton-de Gerlache ridge"></canvas>
   <div class="heroTxt">
-    <span class="eyebrow">Live from the Moon's south pole</span>
-    <h1>The Sun never climbs higher than <em>about 2°</em> here.</h1>
-    <p class="lede">This is the real skyline of a ridge at the Moon's south pole, traced from NASA laser altimetry, with the Sun and Earth where they are this minute. One hill decides whether a lander has power and a radio link home. Earthset checks any site on any date, and finds a way out when the launch slips.</p>
-    <div class="heroBtns"><button id="heroTour">Take the 60-second tour</button><button id="heroToday" class="ghost">Plan a landing from today</button></div>
+    <p class="eyebrow"><i></i>2026 NASA Space Apps · Lunar Landing Site Navigator</p>
+    <h1>Land where the <em>light</em> stays on.</h1>
+    <p class="lede">At the Moon's south pole the Sun never climbs more than about 2°. One hill decides whether a lander has power and a radio link home. Earthset tells you, for any site and any date, in seconds.</p>
+    <div class="heroBtns"><button id="heroToday">Plan a landing <span aria-hidden="true">↗</span></button><button id="heroTour" class="ghost">Take the 60-second tour</button></div>
   </div>
-  <div class="live" id="live">
+  <figure class="heroWin" id="heroWin">
+    <canvas id="heroCv" aria-label="Live view of the Sun and Earth over the terrain horizon at the Shackleton-de Gerlache ridge"></canvas>
+    <div class="live" id="live">
     <p class="liveHd"><i></i><span id="liveMode">Live</span><b id="liveClock"></b></p>
     <dl>
       <dt>Site</dt><dd id="liveSite"></dd>
@@ -56,6 +59,7 @@
     </dl>
     <p class="liveHint">Drag the sky sideways to move through time. <button id="liveReset" hidden>Back to now</button></p>
   </div>
+  </figure>
 </section>
 
 <ul class="facts" aria-label="Key numbers">
@@ -66,7 +70,8 @@
 </ul>
 
 <section class="ask" id="start" aria-label="Ask Earthset">
-  <p class="askTitle">Start here. Say what you want to know.</p>
+  <p class="kicker">Start here</p>
+  <h2 class="askTitle">Ask about a landing, <em>in plain English.</em></h2>
   <form class="askBox" id="askForm" autocomplete="off">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
     <input id="askIn" type="text" placeholder="Ask in plain English: &quot;Land Apollo 17 and IM-2 on 3 March for 10 days&quot;" aria-label="Describe a mission in plain English">
@@ -83,6 +88,7 @@
 
 
 
+<div class="secHead" id="planner"><p class="kicker">The planner</p><h2 class="askTitle">Your mission, <em>at a glance.</em></h2><p class="sub">Pick a date and up to four sites. Each tab answers one question.</p></div>
 <div class="dock">
 <section class="controls" id="tool" aria-label="Mission controls">
   <label>Planned landing (UTC)<input type="datetime-local" id="date" step="3600"></label>
