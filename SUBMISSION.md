@@ -1,6 +1,6 @@
 # Project page text — copy into spaceappschallenge.org
 
-Replace `YOUR-USERNAME` with the GitHub account that hosts the repo. Check every link in a private browser window before submitting.
+Check every link in a private browser window before submitting.
 
 ## Project Name
 
@@ -12,15 +12,15 @@ Earthset is a web tool that tells you, in seconds, whether a lunar lander will h
 
 ## Link to Project Demo
 
-https://YOUR-USERNAME.github.io/earthset/demo/
+https://boytiger-1.github.io/NASA-Space-Apps/demo/
 
 (7 slides.)
 
 ## Link to Final Project
 
-https://YOUR-USERNAME.github.io/earthset/
+https://boytiger-1.github.io/NASA-Space-Apps/
 
-Source code: https://github.com/YOUR-USERNAME/earthset
+Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 
 ## Detailed Project Description
 
