@@ -6,6 +6,7 @@ import { STATIONS, MASK_DEG, stationsInView } from './earthside.js';
 import { createRelief } from './relief3d.js';
 import { prepSite } from './hero.js';
 import { liveCheck, liveCheckHtml } from './livecheck.js';
+import { mountA11y, levelColor, speak, a11y } from './a11y.js';
 import { getKey, setKey, aiMode, aiParse, aiExplain } from './ai.js';
 import { buildSeries, windowMetrics, verdict, calendar, nextEvent, simulateEnergy, fmtDur, HOUR, DAY, DEFAULT_RULES, LIT_MIN, COMM_MIN } from './analysis.js';
 
@@ -16,7 +17,7 @@ const SPAN_DAYS = 730, MAX_DUR = 180;
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const st = { sel: ['ridge', 'im2', 'im1'], focus: 'ridge', base: Date.UTC(2027, 0, 15), slip: 0, dur: 14, cur: 0, rules: { ...DEFAULT_RULES }, mode: 'explorer', map: 'south', frac: 0, en: { arrayW: 650, loadW: 300, sleepW: 50, battWh: 1500, mbps: 2, tracking: true } };
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches || a11y.motion;
 let lm = null, lmLayer = 'sun', lmView = '2d', relief = null, lmBusy = false, tourK = -1;
 let eph, sites = [], worker, reqN = 0, playing = null, nearby = null, customN = 0;
 const pending = {}, seriesCache = new Map(), imgs = {};
@@ -278,7 +279,7 @@ function drawTimeline() {
   $('#timeline')._geo = { ml, pw };
 }
 function dsnSeries(t0, n) { const key = t0 + '|' + n; if (dsnSeries.key !== key) { const a = new Uint8Array(n); for (let k = 0; k < n; k++) a[k] = stationsInView(t0 + k * HOUR); dsnSeries.key = key; dsnSeries.a = a; } return dsnSeries.a; }
-function scrub() { $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); drawMap(); }
+function scrub() { $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); drawMap(); if (!playing) describeCharts(); }
 function timelinePick(e) { const g = $('#timeline')._geo; if (!g) return; const r = e.target.getBoundingClientRect(); stopPlay(); st.cur = Math.max(0, Math.min(N() - 1, Math.round((e.clientX - r.left - g.ml) / g.pw * N()))); $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawMap(); }
 $('#timeline').addEventListener('pointerdown', (e) => { timelinePick(e); e.target.setPointerCapture(e.pointerId); e.target.onpointermove = timelinePick; });
 $('#timeline').addEventListener('pointerup', (e) => { e.target.onpointermove = null; });
@@ -295,7 +296,7 @@ function drawCalendar() {
     const s = site(id), C = cal(s);
     c.fillStyle = colorOf(id); c.fillRect(0, y - 13, 13, 12); c.fillStyle = '#fff'; c.font = '700 condensed 10px "Martian Mono",monospace'; c.fillText(tagOf(id), 3, y - 3); c.fillStyle = '#e9e6dc'; c.font = '11px Archivo,sans-serif'; c.fillText(s.name, 18, y - 3);
     for (let d = 0; d < Math.min(SPAN_DAYS, C.count); d++) { const x = X(d);
-      c.fillStyle = C.level[d] === 2 ? '#2fae62' : C.level[d] === 1 ? '#e9a91c' : '#4a1f1a'; c.fillRect(x, y, cw, 18);
+      c.fillStyle = levelColor(C.level[d]); c.fillRect(x, y, cw, 18);
       c.fillStyle = `rgba(255,200,87,${C.sunPct[d] / 100})`; c.fillRect(x, y + 20, cw, 5);
       c.fillStyle = `rgba(90,169,255,${C.commPct[d] / 100})`; c.fillRect(x, y + 26, cw, 5); }
     y += 50;
@@ -599,7 +600,7 @@ function renderRank() {
   $('#rank').innerHTML = h + '</table>';
   for (const cv of $('#rank').querySelectorAll('canvas')) {
     const r = rankRows[+cv.dataset.i], c = cv.getContext('2d');
-    for (let d = 0; d < r.end; d++) { c.fillStyle = r.C.level[d] === 2 ? '#2fae62' : r.C.level[d] === 1 ? '#e9a91c' : '#4a1f1a'; c.fillRect(d, 0, 1, 14); }
+    for (let d = 0; d < r.end; d++) { c.fillStyle = levelColor(r.C.level[d]); c.fillRect(d, 0, 1, 14); }
     c.fillStyle = '#fff'; c.fillRect(st.slip, 0, 3, 14);
   }
 }
@@ -661,6 +662,29 @@ function icsExport() {
   toast(`${ev.length} events saved for ${s.name.replace(/ \(.*/, '')}`);
 }
 
+// ---------- accessibility: settings panel, spoken answers, chart descriptions, keyboard tabs ----------
+mountA11y({ speak: true });
+addEventListener('a11ychange', () => { reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches || a11y.motion; if (eph) { rankKey = ''; update(); } });
+function spokenAnswer() {
+  const a = $('#answer').querySelector('p'), cards = st.sel.map(id => { const q = site(id); return `${q.name.replace(/ \(.*/, '')}: ${q._v.level === 'go' ? 'GO' : q._v.level === 'marginal' ? 'marginal' : 'no go'}. ${sentence(q, q._m)}`; });
+  return [(a ? a.textContent : ''), ...cards].join(' ').replace(/(\d+) d (\d+) h/g, '$1 days $2 hours').replace(/(\d+) h\b/g, '$1 hours').replace(/(\d+) min\b/g, '$1 minutes').replace(/(\d+) d\b/g, '$1 days').replace(/°/g, ' degrees').replace(/%/g, ' percent');
+}
+function describeCharts() {
+  const s = site(st.focus), S = series(s), i = L() + st.cur, up = S.sunVis[i] >= LIT_MIN, ear = S.earthVis[i] >= COMM_MIN;
+  $('#pano').setAttribute('aria-label', `Sky at ${s.name}, ${fmtDate(landMs() + st.cur * HOUR)}. The Sun is ${S.sunEl[i].toFixed(1)} degrees up and ${up ? 'visible' : 'hidden behind terrain'}. Earth is ${S.earthEl[i].toFixed(1)} degrees up and ${ear ? 'in view' : 'hidden'}.`);
+  $('#timeline').setAttribute('aria-label', 'Mission timeline. ' + st.sel.map(id => { const q = site(id), m = q._m; return `${q.name}: in sunlight ${m.sunPct.toFixed(0)} percent of the time, Earth in view ${m.commPct.toFixed(0)} percent, longest night ${fmtDur(m.maxDarkH)}.`; }).join(' '));
+  $('#cal').setAttribute('aria-label', 'Landing calendar for the next two years. ' + st.sel.map(id => { const q = site(id), sl = slipInfo(q); return `${q.name}: ${sl.go} of ${sl.end} landing days are GO; ${sl.ok ? `your date works, with ${sl.margin} more good day${sl.margin === 1 ? "" : "s"} after it` : sl.next == null ? 'no good day in two years' : `next good day in ${sl.next} days`}.`; }).join(' '));
+  $('#energy').setAttribute('aria-label', 'Battery charge over the mission. ' + $('#enOut').textContent.replace(/\s+/g, ' '));
+  $('#map').setAttribute('aria-label', `Map of landing sites. Your plan: ${st.sel.map(id => site(id).name).join(', ')}.`);
+}
+for (const id of ['pano', 'timeline', 'cal', 'energy', 'map']) $('#' + id).setAttribute('role', 'img');
+{ const tl = $('#tabs'); tl.setAttribute('role', 'tablist');
+  for (const b of tl.querySelectorAll('button')) { b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', String(b.classList.contains('on'))); }
+  tl.addEventListener('keydown', (e) => { const bs = [...tl.querySelectorAll('button')], k = bs.indexOf(document.activeElement); if (k < 0) return;
+    const n = e.key === 'ArrowRight' ? (k + 1) % bs.length : e.key === 'ArrowLeft' ? (k - 1 + bs.length) % bs.length : e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : -1;
+    if (n >= 0) { e.preventDefault(); bs[n].focus(); bs[n].click(); } });
+  new MutationObserver(() => { for (const b of tl.querySelectorAll('button')) b.setAttribute('aria-selected', String(b.classList.contains('on'))); }).observe(tl, { subtree: true, attributes: true, attributeFilter: ['class'] }); }
+
 // ---------- headline answer ----------
 function renderAnswer() {
   const el = $('#answer'), list = st.sel.map(site), tot = list.length;
@@ -675,9 +699,9 @@ function renderAnswer() {
   if (st.slip) t += go.length < planned ? `On the original date ${planned} of ${tot} worked, so the <b>${st.slip}-day slip</b> cost you ${planned - go.length}. ` : `The ${st.slip}-day slip didn't change anything. `;
   else if (margins.length) { const mm = Math.min(...margins); t += mm === 0 ? "It's tight: slip by even a day and one of them stops working. " : `You can slip up to <b>${mm}</b> day${mm === 1 ? '' : 's'} and still land at all of them. `; }
   el.hidden = false;
-  el.innerHTML = `<div class="big ${cls}">${go.length}/${tot} <small>${tot === 1 ? "site is" : "sites are"} GO</small></div><p>${t}</p><div class="acts"><button id="cardBtn" title="Download a shareable PNG of this scenario">Download mission card</button><button id="icsBtn" class="ghost" title="Sunsets, sunrises and Earth-link gaps for the focused site, as a calendar file">Add to calendar</button><a class="ghost" href="#rescuePanel">Find a rescue</a></div>`;
+  el.innerHTML = `<div class="big ${cls}">${go.length}/${tot} <small>${tot === 1 ? "site is" : "sites are"} GO</small></div><p>${t}</p><div class="acts"><button id="cardBtn" title="Download a shareable PNG of this scenario">Download mission card</button>${'speechSynthesis' in window ? '<button id="sayBtn" class="ghost" title="Read this answer out loud">Read aloud</button>' : ''}<button id="icsBtn" class="ghost" title="Sunsets, sunrises and Earth-link gaps for the focused site, as a calendar file">Add to calendar</button><a class="ghost" href="#rescuePanel">Find a rescue</a></div>`;
 }
-$('#answer').addEventListener('click', (e) => { if (e.target.id === 'cardBtn') missionCard(); if (e.target.id === 'icsBtn') icsExport(); });
+$('#answer').addEventListener('click', (e) => { if (e.target.id === 'cardBtn') missionCard(); if (e.target.id === 'icsBtn') icsExport(); if (e.target.id === 'sayBtn') speak(spokenAnswer()); });
 
 // ---------- shareable mission card (PNG) ----------
 function missionCard() {
@@ -756,7 +780,7 @@ const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;
 let askN = 0;
 async function runAsk(text) {
   const msg = $('#askMsg'), n = ++askN, key = aiMode(); msg.hidden = false;
-  const show = (bits, note) => { msg.innerHTML = (bits.length ? 'Showing <b>' + bits.join(' · ') + '</b>.' : '') + (note || ''); };
+  const show = (bits, note) => { msg.innerHTML = (bits.length ? 'Showing <b>' + bits.join(' · ') + '</b>.' : '') + (note || ''); if (a11y.speak && bits.length && !/Working out/.test(note || '')) { const say = msg.querySelector('.aiSay'); speak(say ? say.textContent.replace(/^AI/, '') : spokenAnswer()); } };
   const offline = (note) => {
     const p = parseAsk(text), q = text.toLowerCase();
     const bits = applyAsk({ ids: p.ids, base: p.base, dur: p.dur, slip: p.slip, best: p.best, pole: /\b(pole|polar|south)\b/.test(q) });
@@ -793,7 +817,7 @@ function update(light) {
   $('#cursor').max = N() - 1; $('#cursor').value = st.cur; rangeFill($('#cursor')); rangeFill($('#slip')); syncEnergyInputs();
   $('#rSun').value = st.rules.minSunPct; $('#rDark').value = st.rules.maxDarkH; $('#rComm').value = st.rules.minCommPct; $('#rSunL').checked = st.rules.needSunAtLanding; $('#rEarthL').checked = st.rules.needEarthAtLanding;
   if (!light) renderSites();
-  renderCards(); renderAnswer(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap();
+  renderCards(); renderAnswer(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap(); describeCharts();
   if (!light) { renderRescue(); drawLm(); liveLm(); writeHash(); scheduleRank();
     $('#printHead').innerHTML = `<b>Mission brief.</b> Landing ${fmtDate(landMs())}${st.slip ? ` (planned ${fmtDate(st.base, true)}, slipped ${st.slip} d)` : ''}, ${st.dur}-day mission. Rules: sunlit at least ${st.rules.minSunPct}%, darkness at most ${st.rules.maxDarkH} h, Earth link at least ${st.rules.minCommPct}%${st.rules.needSunAtLanding ? ', Sun up at touchdown' : ''}${st.rules.needEarthAtLanding ? ', Earth in view at touchdown' : ''}.<br>Reopen this scenario: ${location.href}`; }
 }

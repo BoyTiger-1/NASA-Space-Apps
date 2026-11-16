@@ -408,3 +408,38 @@ footer { color: var(--ink3); font-size: 14px; padding: var(--s7) var(--gutter); 
 .help { display: none !important; }
 body.planner .guide { display: none; }
 @media (max-width: 900px) { .guide { grid-template-columns: 1fr; } }
+/* real missions */
+.mis { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s4); margin-top: var(--s7); text-align: left; }
+.mis article { background: var(--card); border: 1px solid var(--line); border-radius: var(--r3); padding: var(--s6); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: var(--s3); }
+.misTag { font-size: 12.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink3); }
+.mis h3 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
+.misHap { color: var(--ink2); font-size: 15.5px; }
+.misES { font-size: 15.5px; background: #fff4ec; border-radius: var(--r1); padding: var(--s3) var(--s4); color: var(--ink); }
+.misES b:first-child { color: var(--accent); }
+.misSrc { font-size: 13px; color: var(--ink3); margin-top: auto; } .misSrc a { color: var(--ink2); }
+@media (max-width: 900px) { .mis { grid-template-columns: 1fr; } }
+
+/* ---------- accessibility ---------- */
+.skip { position: absolute; left: 12px; top: -60px; z-index: 200; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 999px; text-decoration: none; font-weight: 600; }
+.skip:focus { top: 12px; color: #fff; }
+.a11yBtn { position: fixed; left: 18px; bottom: 18px; z-index: 80; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px 10px 12px; background: var(--ink); color: #fff; border-radius: 999px; font-size: 14px; box-shadow: 0 12px 30px -10px rgba(0, 0, 0, .45); }
+.a11yPanel { position: fixed; left: 18px; bottom: 74px; z-index: 81; width: min(360px, calc(100vw - 36px)); max-height: calc(100vh - 100px); overflow: auto; background: var(--card); color: var(--ink); border: 1px solid var(--line2); border-radius: var(--r3); padding: var(--s5); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .45); }
+.a11yPanel h2 { font-size: 20px; font-weight: 600; margin-bottom: var(--s3); }
+.a11yRow { display: flex; justify-content: space-between; align-items: center; gap: var(--s3); padding: var(--s3) 0; border-top: 1px solid var(--line); cursor: pointer; }
+.a11yRow b { display: block; font-weight: 600; font-size: 15px; } .a11yRow small { display: block; color: var(--ink3); font-size: 13px; }
+.a11yRow input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 42px; height: 24px; border-radius: 999px; background: var(--line2); position: relative; flex: none; cursor: pointer; transition: background .2s; }
+.a11yRow input[type=checkbox]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.a11yRow input[type=checkbox]:checked { background: var(--go); } .a11yRow input[type=checkbox]:checked::after { transform: translateX(18px); }
+.a11yReset { margin-top: var(--s3); width: 100%; }
+html.a-size1 body { zoom: 1.12; } html.a-size2 body { zoom: 1.25; }
+html.a-contrast { --ink: #000; --ink2: #1f1f1f; --ink3: #3a3a3a; --line: #7a7a7a; --line2: #3a3a3a; --bg: #fff; --bg2: #e6e6e6; --accent: #9a3412; }
+html.a-contrast body::before { display: none; }
+html.a-contrast .card, html.a-contrast .panel, html.a-contrast .answer, html.a-contrast .guide > div, html.a-contrast .cd { border: 1.5px solid #000; }
+html.a-contrast .guide p, html.a-contrast .explain, html.a-contrast .lsub, html.a-contrast .lede { color: #111; }
+html.a-cb { --go: #1d4ed8; --nogo: #c2410c; --marg: #a16207; }
+html.a-cb .badge.go { background: #dbeafe; } html.a-cb .badge.nogo { background: #ffedd5; }
+html.a-cb .legend .go { background: #3b82f6; } html.a-cb .legend .nogo { background: #7c2d12; } html.a-cb .legend .marg { background: #facc15; }
+html.a-motion *, html.a-motion *::before, html.a-motion *::after { animation: none !important; transition: none !important; } html.a-motion { scroll-behavior: auto; }
+html.a-spacing body { letter-spacing: .03em; word-spacing: .12em; } html.a-spacing p, html.a-spacing li { line-height: 1.85 !important; }
+@media print { .a11yBtn, .a11yPanel, .skip { display: none !important; } }
+@media (max-width: 600px) { .a11yBtn span { display: none; } .a11yBtn { padding: 12px; } }

@@ -3,6 +3,9 @@
 import { loadEphemeris } from './ephem.js';
 import { startHero, prepSite } from './hero.js';
 import { liveCheck, liveCheckHtml } from './livecheck.js';
+import { mountA11y } from './a11y.js';
+
+mountA11y();
 
 document.querySelector('#landAsk').addEventListener('submit', (e) => {
   const v = e.target.q.value.trim(); if (!v) { e.preventDefault(); location.href = 'app.html'; }

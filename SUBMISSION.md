@@ -45,6 +45,8 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 - **Headline answer and mission card.** A one-line verdict ("2/3 sites GO; the tightest tolerates a 1-day slip") sits above the cards, and one click downloads a shareable PNG mission card.
 - **Check it live against NASA.** One button asks NASA/JPL Horizons where the Sun and Earth are right now from the site and compares it with Earthset's own answer on the spot (they agree to about 0.1 arcsecond).
 - **Mission calendar.** Sunsets, sunrises and Earth-link gaps for the planned mission download as a calendar file for Google Calendar or Outlook.
+- **Real missions, re-run.** The website compares Earthset with what happened to recent landers. For JAXA's SLIM (January 2024), Earthset shows the Sun in the east at landing, which explains why its west-facing panels made no power, and puts sunset on 31 January, when SLIM lost power to the lunar night. For IM-2 Athena (March 2025), it shows the Sun never above 5.4° at the target, so a crater a few hundred metres away meant shadow and an early end. For IM-1 Odysseus (February 2024), the site had sunlight until 2 March, but the tilted lander couldn't use it.
+- **Accessibility.** Text size, high contrast, colour-blind-safe colours (blue/orange), reduced motion, easier-reading spacing, answers read aloud, text descriptions of every chart for screen readers, keyboard-navigable tabs and a skip link. Settings are remembered in the browser.
 - **Eclipses.** It also catches the hours when Earth passes in front of the Sun as seen from the Moon.
 
 **How it works**
@@ -64,7 +66,7 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 
 **Benefits and goals**
 
-Mission teams can compare site and date options together in minutes when schedules change, and share a scenario as a link. Teachers and the public can see why the lunar south pole is so demanding. Next steps: full-resolution terrain for every custom site, relay-satellite links, thermal limits and rover traverses between lit spots.
+Recent landers (SLIM, IM-1, IM-2) lost power or ended early because of lighting and orientation at the surface. Mission teams can compare site and date options in minutes when schedules change, and share a scenario as a link. Teachers and the public can see why the lunar south pole is so demanding. Next steps: full-resolution terrain for every custom site, relay-satellite links, thermal limits and rover traverses between lit spots.
 
 **Limits**
 
@@ -93,5 +95,6 @@ Yes. We used an SI coding assistant (Anthropic's Claude) to help choose and shap
 - IAU Gazetteer of Planetary Nomenclature (USGS): feature coordinates.
 - Mazarico, E., et al. (2011). Illumination conditions of the lunar polar regions using LOLA topography. Icarus 211, 1066–1081.
 - Firefly Aerospace and NASA mission updates for Blue Ghost Mission 1 (March 2025): event times used for the real-mission check.
+- Mission outcomes used on the website: New Atlas and NASASpaceflight on JAXA SLIM (2024); Spaceflight Now on IM-2 Athena (2025); Universe Today on IM-1 Odysseus (2024).
 - Software: SPICE Toolkit via spiceypy, NumPy, Pillow, Node.js, Python, Google Chrome (testing).
 - SI tools: Anthropic Claude (development, see above); Google Gemini API (optional runtime assistant in the Ask bar).
