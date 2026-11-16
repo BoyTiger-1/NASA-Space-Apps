@@ -1,6 +1,6 @@
 # Earthset: Lunar Landing Window Navigator
 
-**2026 NASA Space Apps Challenge · Seattle · Challenge: Lunar Landing Site Navigator**
+**2026 NASA Space Apps Challenge · Universal Event · Challenge: Lunar Landing Site Navigator**
 
 Earthset answers one question fast: *if we land here, on this day, will the lander have sunlight and a
 direct line to Earth, and what do we do if the launch slips?*
