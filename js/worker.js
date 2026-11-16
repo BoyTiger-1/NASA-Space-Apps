@@ -6,6 +6,7 @@ import { PolarDEM, CylDEM, TerrainStack, computeHorizon, deltaDecode, fetchGzI16
 import { R_SUN } from './ephem.js';
 import { buildSeries, windowMetrics, verdict, HOUR } from './analysis.js';
 import { sunRoute } from './route.js';
+import { findBaseCamps } from './basecamp.js';
 
 let eph = null, manifest = null;
 const dems = {};
@@ -64,7 +65,13 @@ onmessage = async (e) => {
         eph.pos(1, t, v); return { s, rS, e: [v[0] * 1000, v[1] * 1000, v[2] * 1000] };
       };
       if (!m.quiet) postMessage({ type: 'status', text: 'Casting terrain shadows…' });
-      const r = lightMap(T, m.lat, m.lon, m.mast, m.N, res, m.times, sunEarth, { frames: !!m.route, maxDist: m.maxDist || 150e3, onProgress: (a, b) => { if (b > 1) postMessage({ type: 'status', text: `Casting terrain shadows… ${a}/${b} moments` }); } });
+      const r = lightMap(T, m.lat, m.lon, m.mast, m.N, res, m.times, sunEarth, { frames: !!m.route, both: !!m.basecamp, maxDist: m.maxDist || 150e3, onProgress: (a, b) => { if (b > 1) postMessage({ type: 'status', text: `Casting terrain shadows… ${a}/${b} moments` }); } });
+      if (m.basecamp) {
+        postMessage({ type: 'status', text: 'Ranking every spot for a base camp…' });
+        const B = findBaseCamps(r, { maxSlopeDeg: 10, spacingM: 1000, top: 5 });
+        postMessage({ type: 'basecamp', req: m.req, N: r.N, res: r.res, both: r.both, lit: r.lit, comm: r.comm, h: r.h, dark: B.dark, spots: B.spots, here: B.here, darkPct: B.nDarkPct }, [r.both.buffer, r.lit.buffer, r.comm.buffer, r.h.buffer, B.dark.buffer]);
+        return;
+      }
       if (m.route) {
         postMessage({ type: 'status', text: 'Searching every drive for the one that stays in the light…' });
         const c = Math.round((r.N - 1) / 2), start = c * r.N + c;

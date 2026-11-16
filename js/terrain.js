@@ -161,29 +161,30 @@ export function lightMap(terrain, latDeg, lonDeg, mast, N, res, times, sunEarth,
     }
     return best;
   };
-  const lit = new Float32Array(px), comm = new Float32Array(px), F = opts.frames ? new Uint8Array(times.length * px) : null;
+  const lit = new Float32Array(px), comm = new Float32Array(px), F = opts.frames ? new Uint8Array(times.length * px) : null, B = opts.both ? new Float32Array(px) : null, MX = opts.both ? new Float32Array(px) : null;
   for (let n = 0; n < times.length; n++) {
     const { s, rS, e } = sunEarth(times[n]);
     for (let k = 0; k < px; k++) {
       const ux = U[3 * k], uy = U[3 * k + 1], uz = U[3 * k + 2], rp = RP[k];
-      const su = s[0] * ux + s[1] * uy + s[2] * uz, el = Math.asin(su);
+      const su = s[0] * ux + s[1] * uy + s[2] * uz, el = Math.asin(su); let fNow = 0;
       if (el > -rS - 0.2) {
         let tx = s[0] - su * ux, ty = s[1] - su * uy, tz = s[2] - su * uz; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
         const hmax = Math.atan(march(ux, uy, uz, tx, ty, tz, rp, Math.tan(Math.min(1.55, el + rS))));
-        const f = (el + rS - hmax) / (2 * rS), fv = f <= 0 ? 0 : f >= 1 ? 1 : f; lit[k] += fv; if (F) F[n * px + k] = Math.round(fv * 255);
+        const f = (el + rS - hmax) / (2 * rS), fv = f <= 0 ? 0 : f >= 1 ? 1 : f; lit[k] += fv; fNow = fv; if (F) F[n * px + k] = Math.round(fv * 255); if (MX && fv > MX[k]) MX[k] = fv;
       }
       let dx = e[0] - rp * ux, dy = e[1] - rp * uy, dz = e[2] - rp * uz; const dl = Math.hypot(dx, dy, dz); dx /= dl; dy /= dl; dz /= dl;
       const eu = dx * ux + dy * uy + dz * uz;
       if (eu > -0.2) {
         let tx = dx - eu * ux, ty = dy - eu * uy, tz = dz - eu * uz; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
         const stop = eu / Math.sqrt(Math.max(1e-12, 1 - eu * eu));
-        if (march(ux, uy, uz, tx, ty, tz, rp, stop) < stop) comm[k] += 1;
+        if (march(ux, uy, uz, tx, ty, tz, rp, stop) < stop) { comm[k] += 1; if (B) B[k] += fNow; }
       }
     }
     if (onProgress) onProgress(n + 1, times.length);
   }
-  for (let k = 0; k < px; k++) { lit[k] /= times.length; comm[k] /= times.length; }
-  return F ? { N, res, lit, comm, h: H, frames: F } : { N, res, lit, comm, h: H };
+  for (let k = 0; k < px; k++) { lit[k] /= times.length; comm[k] /= times.length; if (B) B[k] /= times.length; }
+  const out = { N, res, lit, comm, h: H }; if (F) out.frames = F; if (B) { out.both = B; out.maxLit = MX; }
+  return out;
 }
 
 // ---- compact DEM container used by the browser (row-delta int16, gzip) ----

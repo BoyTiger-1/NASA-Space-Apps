@@ -716,6 +716,46 @@ function describeRoute() {
 }
 $('#rtBtn').addEventListener('click', () => runRoute());
 
+// ---------- base camp finder: a year of Sun + Earth, near the ice ----------
+let bc = null, bcBusy = false;
+function runBaseCamp() {
+  if (bcBusy || lmBusy) { toast('One moment, still working on the last map'); return; }
+  const s = site(st.focus), n = 120, times = [];
+  for (let k = 0; k < n; k++) times.push(landMs() + (k + 0.5) / n * 365.25 * DAY);
+  bcBusy = lmBusy = true; $('#bcBtn').disabled = true; $('#bcOut').textContent = 'Casting shadows and checking Earth for 120 moments across a year. This takes 10 to 20 seconds.';
+  ask({ type: 'lightmap', lat: s.lat, lon: s.lon, mast: s.mast, N: 160, times, basecamp: true }).then(r => {
+    bc = { ...r, id: s.id, lat: s.lat, lon: s.lon, mast: s.mast, from: times[0] }; drawBaseCamp();
+  }).catch(e => { $('#bcOut').textContent = 'Base camp search failed: ' + e.message; }).finally(() => { bcBusy = lmBusy = false; $('#bcBtn').disabled = false; });
+}
+function drawBaseCamp() {
+  const cv = $('#bc'), wCss = cv.clientWidth || 400, { c, w, h } = fit(cv, wCss);
+  if (!bc || bc.id !== st.focus) { c.fillStyle = '#0b0b0a'; c.fillRect(0, 0, w, h); c.fillStyle = '#aaa69a'; c.font = '13px Archivo,sans-serif'; c.textAlign = 'center'; c.fillText('Press "Find base camp spots"', w / 2, h / 2 - 8); c.fillText('to search a year of sunlight around ' + (site(st.focus).name.length > 30 ? 'this site' : site(st.focus).name), w / 2, h / 2 + 12); c.textAlign = 'left'; if (bc && bc.id !== st.focus) $('#bcOut').innerHTML = ''; return; }
+  const n = bc.N, off = drawBaseCamp.off || (drawBaseCamp.off = document.createElement('canvas')); off.width = off.height = n;
+  const oc = off.getContext('2d'), im = oc.createImageData(n, n), d = im.data, stops = [[24, 23, 28], [140, 70, 24], [255, 209, 102]]; let top = 0.05; for (let k = 0; k < n * n; k++) if (!bc.dark[k] && bc.both[k] > top) top = bc.both[k];
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const k = j * n + i, i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1), j0 = Math.max(0, j - 1), j1 = Math.min(n - 1, j + 1);
+    const gx = (bc.h[j * n + i1] - bc.h[j * n + i0]) / ((i1 - i0) * bc.res), gy = (bc.h[j0 * n + i] - bc.h[j1 * n + i]) / ((j1 - j0) * bc.res), sh = Math.max(0.35, Math.min(1.25, 0.75 + 2.5 * (gx * 0.7 - gy * 0.7)));
+    const col = bc.dark[k] ? [59, 130, 246] : rampAt(stops, Math.pow(Math.min(1, bc.both[k] / top), 0.65));
+    d[4 * k] = col[0] * sh; d[4 * k + 1] = col[1] * sh; d[4 * k + 2] = col[2] * sh; d[4 * k + 3] = 255;
+  }
+  oc.putImageData(im, 0, 0); c.imageSmoothingEnabled = true; c.drawImage(off, 0, 0, w, h);
+  c.strokeStyle = '#fff'; c.lineWidth = 1.5; c.beginPath(); c.arc(w / 2, h / 2, 7, 0, 7); c.stroke();
+  bc.spots.forEach((p, q) => { const x = (p.i + 0.5) / n * w, y = (p.j + 0.5) / n * h; c.fillStyle = '#000'; c.beginPath(); c.arc(x, y, 12, 0, 7); c.fill(); c.strokeStyle = '#ffd166'; c.lineWidth = 2; c.stroke(); c.fillStyle = '#ffd166'; c.font = '700 13px "Inter Tight",Archivo,sans-serif'; c.textAlign = 'center'; c.fillText(q + 1, x, y + 4.5); });
+  const span = n * bc.res, nice = [500, 1000, 2000, 5000, 10000, 20000, 50000].find(v => v >= span / 5) || 50000, bw = nice / span * w;
+  c.textAlign = 'left'; c.fillStyle = '#000a'; c.fillRect(10, h - 30, bw + 16, 22); c.fillStyle = '#fff'; c.fillRect(18, h - 14, bw, 2); c.font = 'condensed 11px "Martian Mono",monospace'; c.fillText(nice >= 1000 ? nice / 1000 + ' km' : nice + ' m', 18, h - 18);
+  const pc = (v) => (v * 100).toFixed(0) + '%', km = (m) => m == null ? 'over ' + (span / 2000).toFixed(0) + ' km' : m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1) + ' km', dir = (p) => { const dist = Math.hypot(p.de, p.dn), brg = (Math.atan2(p.de, p.dn) * R2D + 360) % 360; return `${dist < 1000 ? Math.round(dist) + ' m' : (dist / 1000).toFixed(1) + ' km'} ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(brg / 45) % 8]}`; };
+  const H = bc.here, best = bc.spots[0];
+  $('#bcOut').innerHTML = (best ? `<p class="bcLead">Best spot: <b>${pc(best.both)}</b> of the year with both Sun and Earth, ${km(best.iceM)} from always-dark ground. Your landing site: ${pc(H.both)}.</p>` : '<p>No spot here meets the slope limit.</p>') +
+    `<table class="bcT"><tr><th>#</th><th>Where</th><th>Sun + Earth</th><th>Sun</th><th>To the ice</th><th>Slope</th><th></th></tr>${bc.spots.map((p, q) => `<tr><td>${q + 1}</td><td>${dir(p)}</td><td><b>${pc(p.both)}</b></td><td>${pc(p.lit)}</td><td>${km(p.iceM)}</td><td>${p.slopeDeg.toFixed(0)}°</td><td><button class="ghost" data-bc="${q}">Use</button></td></tr>`).join('')}</table>
+    <p class="hint">${bc.darkPct.toFixed(0)}% of this ground stayed dark all year. "Dark all year" is from one year of samples on the ${bc.res} m grid, so it is a guide to where ice could be, not proof. Screening only.</p>`;
+  $('#bc').setAttribute('aria-label', `Base camp map around ${site(st.focus).name}. ` + bc.spots.map((p, q) => `Spot ${q + 1}, ${dir(p)}: Sun and Earth ${pc(p.both)} of the year, ${km(p.iceM)} from always-dark ground.`).join(' '));
+}
+$('#bcBtn').addEventListener('click', () => runBaseCamp());
+$('#bcOut').addEventListener('click', (e) => { const q = e.target.dataset.bc; if (q == null || !bc) return; const p = bc.spots[+q], o = offsetLL(bc.lat, bc.lon, p.de, p.dn); addCustom(o.lat, o.lon, bc.mast); });
+$('#bc').addEventListener('mousemove', (e) => { const t = $('#bcTip'); if (!bc || bc.id !== st.focus) { t.hidden = true; return; } const r = $('#bc').getBoundingClientRect(), n = bc.N, i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n))), j = Math.max(0, Math.min(n - 1, Math.floor((e.clientY - r.top) / r.height * n))), k = j * n + i;
+  t.hidden = false; t.innerHTML = bc.dark[k] ? 'Dark all year: <b>likely ice</b>' : `Sun + Earth <b>${(bc.both[k] * 100).toFixed(0)}%</b> · Sun ${(bc.lit[k] * 100).toFixed(0)}% · Earth ${(bc.comm[k] * 100).toFixed(0)}%`; t.style.left = Math.min($('#bc').clientWidth - 230, e.clientX - r.left + 14) + 'px'; t.style.top = e.clientY - r.top + 16 + 'px'; });
+$('#bc').addEventListener('mouseleave', () => { $('#bcTip').hidden = true; });
+
 // ---------- headline answer ----------
 function renderAnswer() {
   const el = $('#answer'), list = st.sel.map(site), tot = list.length;
@@ -848,7 +888,7 @@ function update(light) {
   $('#cursor').max = N() - 1; $('#cursor').value = st.cur; rangeFill($('#cursor')); rangeFill($('#slip')); syncEnergyInputs();
   $('#rSun').value = st.rules.minSunPct; $('#rDark').value = st.rules.maxDarkH; $('#rComm').value = st.rules.minCommPct; $('#rSunL').checked = st.rules.needSunAtLanding; $('#rEarthL').checked = st.rules.needEarthAtLanding;
   if (!light) renderSites();
-  renderCards(); renderAnswer(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap(); describeCharts();
+  renderCards(); renderAnswer(); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawCalendar(); drawMap(); drawBaseCamp(); describeCharts();
   if (!light) { renderRescue(); drawLm(); liveLm(); writeHash(); scheduleRank();
     $('#printHead').innerHTML = `<b>Mission brief.</b> Landing ${fmtDate(landMs())}${st.slip ? ` (planned ${fmtDate(st.base, true)}, slipped ${st.slip} d)` : ''}, ${st.dur}-day mission. Rules: sunlit at least ${st.rules.minSunPct}%, darkness at most ${st.rules.maxDarkH} h, Earth link at least ${st.rules.minCommPct}%${st.rules.needSunAtLanding ? ', Sun up at touchdown' : ''}${st.rules.needEarthAtLanding ? ', Earth in view at touchdown' : ''}.<br>Reopen this scenario: ${location.href}`; }
 }
@@ -880,6 +920,6 @@ async function init() {
     if (e.key === ' ') { e.preventDefault(); $('#play').click(); }
     else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stopPlay(); st.cur = Math.max(0, Math.min(N() - 1, st.cur + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 24 : 1))); scrub(); }
   });
-  window.addEventListener('resize', () => { clearTimeout(init.t); init.t = setTimeout(() => { drawPano(); drawTimeline(); drawEnergy(); drawCalendar(); drawLm(); drawMap(); }, 120); });
+  window.addEventListener('resize', () => { clearTimeout(init.t); init.t = setTimeout(() => { drawPano(); drawTimeline(); drawEnergy(); drawCalendar(); drawLm(); drawMap(); drawBaseCamp(); }, 120); });
 }
 init().catch(err => { document.body.insertAdjacentHTML('afterbegin', `<p style="padding:20px;color:#ff5d6c">Earthset could not start: ${err.message}. If you opened the file directly, serve the folder over http (e.g. <code>python3 -m http.server</code>).</p>`); console.error(err); });

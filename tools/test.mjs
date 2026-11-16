@@ -81,4 +81,18 @@ console.log('Sites and mission logic');
   const R2 = sunRoute(F, T, N, 120, wall, c, { speed: 120, dtH: 3, maxSlopeDeg: 20 });
   ok('Route: a cliff steeper than the limit cannot be crossed', !Array.from(R2.path).some(k => k % N >= 9)); }
 
+{ console.log('Base camp finder');
+  const { findBaseCamps } = await import('../js/basecamp.js');
+  // 21x21 flat grid. Sun+Earth is best at one pixel; a dark patch sits 4 pixels west of it.
+  const N = 21, px = N * N, z = () => new Float32Array(px), r = { N, res: 100, both: z(), lit: z(), comm: z(), h: z(), maxLit: z() };
+  for (let k = 0; k < px; k++) { r.both[k] = 0.3; r.lit[k] = 0.5; r.comm[k] = 0.6; r.maxLit[k] = 1; }
+  const best = 10 * N + 14; r.both[best] = 0.9;
+  for (let j = 9; j <= 11; j++) for (let i = 8; i <= 10; i++) r.maxLit[j * N + i] = 0;
+  const B = findBaseCamps(r, { maxSlopeDeg: 10, spacingM: 500, top: 3 });
+  ok('Base camp: picks the spot with the most Sun + Earth', B.spots[0].k === best, (B.spots[0].both * 100).toFixed(0) + '%');
+  ok('Base camp: measures the distance to always-dark ground', Math.abs(B.spots[0].iceM - 400) < 1, B.spots[0].iceM + ' m');
+  ok('Base camp: never puts a base in always-dark ground', B.spots.every(s => r.maxLit[s.k] > 0));
+  const steep = { ...r, h: Float32Array.from({ length: px }, (_, k) => (k % N) === 14 ? 300 : 0) };
+  ok('Base camp: rejects steep ground', !findBaseCamps(steep, { maxSlopeDeg: 10, spacingM: 500, top: 3 }).spots.some(s => s.k === best)); }
+
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

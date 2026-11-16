@@ -462,3 +462,10 @@ html.a-spacing body { letter-spacing: .03em; word-spacing: .12em; } html.a-spaci
 .rtStat .win { border-color: #f0b27a; background: #fff8ef; }
 .rtStat small { display: block; font-size: 13px; color: var(--ink3); } .rtStat b { display: block; font-size: 44px; font-weight: 600; letter-spacing: -.04em; line-height: 1.1; } .rtStat .win b { color: var(--accent); } .rtStat span { font-size: 13.5px; color: var(--ink2); }
 .fine2 { font-size: 13px !important; color: var(--ink3) !important; margin-top: var(--s4); }
+/* base camp finder */
+.bcOut { width: 100%; font-size: 14px; color: var(--ink2); }
+.bcLead { font-size: 15.5px; color: var(--ink); margin-bottom: var(--s3); } .bcLead b { color: var(--accent); font-size: 18px; }
+.bcT { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; margin-bottom: var(--s2); }
+.bcT th { text-align: left; font-weight: 500; font-size: 12px; color: var(--ink3); padding: 6px; border-bottom: 1px solid var(--line2); }
+.bcT td { padding: 7px 6px; border-bottom: 1px solid var(--line); } .bcT td b { color: var(--ink); }
+.bcT button { padding: 4px 12px; font-size: 12.5px; }

@@ -88,7 +88,7 @@
   </div>
 </section>
 <nav class="tabs" id="tabs" aria-label="Views">
-  <button data-tab="answer" class="on">Answer</button><button data-tab="sky">Sky</button><button data-tab="slip">If it slips</button><button data-tab="rescue">Rescue</button><button data-tab="terrain">Terrain</button><button data-tab="power">Power</button><button data-tab="method">Method</button>
+  <button data-tab="answer" class="on">Answer</button><button data-tab="sky">Sky</button><button data-tab="slip">If it slips</button><button data-tab="rescue">Rescue</button><button data-tab="terrain">Terrain</button><button data-tab="power">Power</button><button data-tab="base">Base camp</button><button data-tab="method">Method</button>
 </nav>
 </div>
 
@@ -166,6 +166,21 @@
       <div class="phead"><h2>Rescue the mission</h2></div>
       <div class="guide"><div><span>What you see</span><p>Three ways out when your date doesn't work, for the site you're focused on.</p></div><div><span>How to read it</span><p>Left: the next date that works at the same site. Middle: every other site on the same date, best first. Right: spots a few hundred metres away on the same terrain, tested one by one.</p></div><div><span>Try</span><p>Press <b>Land then</b>, <b>Compare</b> or <b>Use</b> to switch your plan to that option.</p></div></div>
       <div id="rescue"></div>
+    </section>
+
+    <section class="panel" data-tab="base" id="bcPanel">
+      <div class="phead"><h2>Where would you build a Moon base? <small>base camp finder</small></h2></div>
+      <div class="guide"><div><span>What you see</span><p>A whole year of sunlight and Earth visibility for the ground around your site, about 19 km across. Gold = lit and able to talk to Earth at the same time, most often. Blue = ground that never saw the Sun all year, where water ice can survive.</p></div><div><span>How to read it</span><p>A long-stay base needs three things at once: sunlight for power, Earth in view for radio, and a short drive to the ice. The numbered spots are the best five: gentle slopes (under 10°), at least 1 km apart, ranked by time with both Sun and Earth, with a bonus for being within 5 km of the ice.</p></div><div><span>Try</span><p>Press <b>Find base camp spots</b>, then <b>Use</b> on a spot to plan a landing there. Try it at the Shackleton ridge, then at Malapert Massif.</p></div></div>
+      <div class="lmWrap">
+        <div class="lmCv"><canvas id="bc" role="img" aria-label="Base camp map. Press Find base camp spots to compute it."></canvas><div id="bcTip" class="tip" hidden></div></div>
+        <div class="lmSide">
+          <button id="bcBtn">Find base camp spots (one year)</button>
+          <p id="bcInfo" class="hint">Uses 120 moments across the year after your landing date, on the LOLA terrain around the site you're focused on.</p>
+          <div class="ramp"><span>least</span><i style="background:linear-gradient(90deg,#18171c,#8c4618,#ffd166)"></i><span>most Sun + Earth here</span></div>
+          <div class="ramp"><i style="background:#3b82f6;max-width:14px;height:12px"></i><span>dark all year (likely ice)</span></div>
+          <div id="bcOut" class="bcOut" aria-live="polite"></div>
+        </div>
+      </div>
     </section>
 
     <section class="panel" data-tab="terrain" id="lmPanel">
