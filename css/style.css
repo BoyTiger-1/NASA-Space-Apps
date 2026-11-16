@@ -469,3 +469,31 @@ html.a-spacing body { letter-spacing: .03em; word-spacing: .12em; } html.a-spaci
 .bcT th { text-align: left; font-weight: 500; font-size: 12px; color: var(--ink3); padding: 6px; border-bottom: 1px solid var(--line2); }
 .bcT td { padding: 7px 6px; border-bottom: 1px solid var(--line); } .bcT td b { color: var(--ink); }
 .bcT button { padding: 4px 12px; font-size: 12.5px; }
+/* lunar month time-lapse + can the Moon see you */
+.heroPlay { position: absolute; left: 20px; top: 20px; z-index: 2; background: rgba(255, 255, 255, .92); color: var(--ink); border-color: transparent; font-size: 14px; padding: 9px 16px; }
+.heroPlay::before { content: "▶"; font-size: 10px; margin-right: 8px; vertical-align: 1px; }
+.heroPlay[aria-pressed="true"]::before { content: "❚❚"; font-size: 9px; }
+.heroCap { position: absolute; left: 20px; top: 66px; z-index: 2; max-width: min(460px, calc(100% - 40px)); background: rgba(12, 12, 14, .72); backdrop-filter: blur(10px); color: #f1eee6; border: 1px solid rgba(255, 255, 255, .15); border-radius: var(--r1); padding: 10px 14px; font-size: 15px; line-height: 1.45; }
+.heroCap b { color: #ffd166; }
+.seeYouSec { padding-top: var(--s8); }
+.seeYou { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--s7); align-items: center; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: var(--r3); padding: var(--s7); box-shadow: var(--shadow); }
+.seeYou .lh2.sm { font-size: clamp(30px, 3.6vw, 48px); margin: 0; max-width: 16ch; } .seeYou .lsub { margin: var(--s4) 0 0; }
+.syCard { display: flex; flex-direction: column; gap: var(--s3); align-items: flex-start; background: var(--bg); border-radius: var(--r2); padding: var(--s5); }
+.syCard label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink3); font-weight: 500; }
+.syOut { font-size: 16px; color: var(--ink2); line-height: 1.55; } .syOut b { color: var(--ink); }
+.syCard small { color: var(--ink3); font-size: 12px; }
+@media (max-width: 900px) { .seeYou { grid-template-columns: 1fr; padding: var(--s5); gap: var(--s5); } .heroCap { top: auto; bottom: 64px; } }
+@media (max-width: 600px) { .heroPlay { top: auto; bottom: 56px; left: 12px; } .heroCap { bottom: 104px; left: 12px; } }
+/* teach page */
+.tChips { list-style: none; padding: 0; margin: var(--s5) 0 0; display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: center; }
+.tChips li { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--ink2); }
+.tAct { display: grid; gap: var(--s5); text-align: left; padding-top: var(--s8); }
+.tCard { background: var(--card); border: 1px solid var(--line); border-radius: var(--r3); padding: var(--s7); box-shadow: var(--shadow); max-width: 900px; margin: 0 auto; width: 100%; }
+.tCard .num { font: italic 400 20px var(--serif); color: var(--accent); }
+.tCard h2 { font-size: clamp(26px, 3vw, 36px); font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: var(--s2) 0 var(--s4); }
+.tCard h3 { font-size: 18px; font-weight: 600; margin: var(--s5) 0 var(--s2); }
+.tCard ol { padding-left: 22px; color: var(--ink2); display: grid; gap: 6px; } .tCard li b { color: var(--ink); }
+.tGoal { background: #fff4ec; border-radius: var(--r1); padding: var(--s3) var(--s4); margin-bottom: var(--s4); color: var(--ink2); }
+.tQ li { padding-bottom: 28px; border-bottom: 1px dashed var(--line2); }
+.tCard details { margin-top: var(--s5); background: var(--bg); border-radius: var(--r1); padding: var(--s3) var(--s4); } .tCard summary { cursor: pointer; font-weight: 600; } .tCard details p { margin-top: var(--s2); color: var(--ink2); }
+@media print { .teach .tCard { break-inside: avoid; box-shadow: none; } .teach .dataBand, .teach .tChips { display: none; } .teach .tQ li { padding-bottom: 60px; } }

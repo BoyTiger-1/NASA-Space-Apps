@@ -23,7 +23,7 @@
     <a class="ghost hideS" href="#why">Why</a>
     <a class="ghost hideS" href="#missions">Real missions</a>
     <a class="ghost hideS" href="#light">Follow the light</a>
-    <a class="ghost hideS" href="#data">Data</a>
+    <a class="ghost hideS" href="teach.html">Teachers</a>
     <a class="ghost cta" href="app.html">Open the planner</a>
   </nav>
 </header>
@@ -37,6 +37,8 @@
   </div>
   <figure class="heroWin" id="heroWin">
     <canvas id="heroCv" aria-label="Live view of the Sun and Earth over the terrain horizon at the Shackleton-de Gerlache ridge"></canvas>
+    <button id="heroPlay" class="heroPlay" type="button" aria-pressed="false">Watch the next 30 days</button>
+    <p id="heroCap" class="heroCap" aria-live="polite" hidden></p>
     <div class="live" id="live">
       <p class="liveHd"><i></i><span id="liveMode">Live</span><b id="liveClock"></b></p>
       <dl>
@@ -56,6 +58,19 @@
   <li><b>19 sites</b><span>Apollo, CLPS, ISRO, JAXA, CNSA and south-pole candidates, plus any point you click</span></li>
   <li><b>0 servers</b><span>The maths runs in your browser, offline if you want</span></li>
 </ul>
+
+<section class="lsec seeYouSec" id="connect">
+  <div class="seeYou" id="seeYou">
+    <div><p class="kicker">From your city</p><h2 class="lh2 sm">Can the Moon <em>see you</em> right now?</h2>
+      <p class="lsub">A lander on the Shackleton ridge can only talk to Earth when Earth is above its hills. You can only see the lander when the Moon is in your sky. Find out when both happen for you.</p></div>
+    <div class="syCard">
+      <label>Your city <select aria-label="Choose a city"></select></label>
+      <button type="button" class="ghost syGeo">Use my location</button>
+      <p class="syOut" aria-live="polite"></p>
+      <small>Your location is only used in your browser. Moon position from the Astronomical Almanac series (about 0.3°).</small>
+    </div>
+  </div>
+</section>
 
 <section class="lsec" id="why">
   <p class="kicker">The problem</p>
@@ -191,7 +206,7 @@
 <footer class="lfoot">
   <p><b>Earthset</b> was made in Seattle by Ronit Agarwal, Shaurya Sahdev and Vyom Joshi for the 2026 NASA Space Apps Challenge (Lunar Landing Site Navigator).</p>
   <p>Code and text were written with the assistance of an SI coding tool (Claude). The optional Ask assistant uses Google Gemini to read questions; it never produces the numbers. Not an official NASA product.</p>
-  <p><a href="app.html">Planner</a> · <a href="demo/">Project demo</a> · <a href="https://github.com/BoyTiger-1/NASA-Space-Apps">Source code</a></p>
+  <p><a href="app.html">Planner</a> · <a href="teach.html">For teachers</a> · <a href="demo/">Project demo</a> · <a href="https://github.com/BoyTiger-1/NASA-Space-Apps">Source code</a></p>
 </footer>
 <script type="module" src="js/landing.js"></script>
 </body>

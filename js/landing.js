@@ -4,6 +4,7 @@ import { loadEphemeris } from './ephem.js';
 import { startHero, prepSite } from './hero.js';
 import { liveCheck, liveCheckHtml } from './livecheck.js';
 import { mountA11y } from './a11y.js';
+import { mountConnect } from './connect.js';
 
 mountA11y();
 
@@ -15,7 +16,8 @@ document.querySelector('#landAsk').addEventListener('submit', (e) => {
   try {
     const [eph, sj] = await Promise.all([loadEphemeris('data/'), fetch('data/sites.json').then(r => r.json())]);
     const src = sj.sites.find(s => s.id === 'ridge') || sj.sites[0];
-    startHero(eph, prepSite(src));
+    const hero = startHero(eph, prepSite(src));
+    mountConnect(hero);
     const btn = document.querySelector('#lcBtn'), out = document.querySelector('#lcOut');
     btn.addEventListener('click', async () => {
       btn.disabled = true; out.hidden = false; out.textContent = 'Asking NASA/JPL Horizons where the Sun and Earth are right now…';

@@ -83,7 +83,41 @@ export function startHero(eph, src) {
   const end = () => { drag = null; }; cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
   $('#liveReset').addEventListener('click', () => { off = 0; draw(); });
   addEventListener('resize', draw);
-  setInterval(() => { if (!document.hidden && !drag) draw(); }, 1000);
+  setInterval(() => { if (!document.hidden && !drag && !anim) draw(); }, 1000);
+
+  // ---- "Watch a lunar month": a 30-day time-lapse with captions from real events ----
+  let anim = null;
+  const cap = $('#heroCap'), playBtn = $('#heroPlay');
+  const events = () => {
+    const t0 = Date.now(), out = []; let ps = null, pe = null;
+    for (let k = 0; k <= 30 * 24; k++) {
+      const t = clampT(t0 + k * HOUR), sv = body(0, t).vis >= LIT_MIN, ev = body(1, t).vis >= COMM_MIN;
+      if (ps !== null && sv !== ps) out.push({ k, kind: sv ? 'sunrise' : 'sunset' });
+      if (pe !== null && ev !== pe) out.push({ k, kind: ev ? 'earthrise' : 'earthset' });
+      ps = sv; pe = ev;
+    }
+    return out;
+  };
+  const SAY = { sunrise: 'The Sun clears the hills again. Power is back.', sunset: 'The Sun slips behind the terrain. From here the lander runs on batteries.', earthrise: 'Earth rises over the ridge. The radio link home is back.', earthset: 'Earth sets behind the hills. No direct radio link until it comes back.' };
+  const show = (txt) => { if (!cap) return; cap.hidden = false; cap.innerHTML = txt; };
+  const stop = (msg) => { if (anim) cancelAnimationFrame(anim.raf); anim = null; if (playBtn) { playBtn.textContent = 'Watch the next 30 days'; playBtn.setAttribute('aria-pressed', 'false'); } if (msg) show(msg); };
+  if (playBtn) playBtn.addEventListener('click', () => {
+    if (anim) { stop(); return; }
+    const evs = events(), start = performance.now(), dur = matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('a-motion') ? 12000 : 36000; let next = 0;
+    const first = G || compute(clampT(Date.now()));
+    show(`<b>Day 0, now.</b> The Sun is ${first.sun.el.toFixed(1)}° above the horizon${first.up ? ' and lighting the ridge' : ', hidden behind the hills'}. Earth is ${first.ear.vis >= COMM_MIN ? 'in view' : 'hidden'}. Watch the next 30 days.`);
+    playBtn.textContent = 'Pause'; playBtn.setAttribute('aria-pressed', 'true');
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / dur), h = p * 30 * 24; off = h * HOUR; draw();
+      while (next < evs.length && evs[next].k <= h) { const e = evs[next++]; show(`<b>Day ${Math.floor(e.k / 24)}.</b> ${SAY[e.kind]}`); }
+      if (p < 1) anim.raf = requestAnimationFrame(step);
+      else stop(evs.length ? `<b>Day 30.</b> ${evs.length} changes in a month, all from real NASA terrain and ephemeris. A few hundred metres away the story is different, which is what Earthset is for.` : '<b>Day 30.</b> The Sun circled the horizon all month and never set here. That is why this ridge is a top candidate for a Moon base.');
+    };
+    anim = { raf: requestAnimationFrame(step) };
+  });
+  cv.addEventListener('pointerdown', () => { if (anim) stop(); });
+  $('#liveReset').addEventListener('click', () => { stop(); if (cap) cap.hidden = true; });
   draw();
+  return { body, clampT };
 }
 
