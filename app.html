@@ -67,12 +67,12 @@
 <div class="secHead" id="planner"><p class="kicker">The planner</p><h2 class="askTitle">Your mission, <em>at a glance.</em></h2><p class="sub">Pick a date and up to four sites. Each tab below answers one question.</p></div>
 <div class="dock">
 <section class="controls" id="tool" aria-label="Mission controls">
-  <label>Planned landing (UTC)<input type="datetime-local" id="date" step="3600"></label>
+  <label>Landing date (UTC)<input type="datetime-local" id="date" step="3600"><small class="ih">when the lander touches down</small></label>
   <label>Mission length
-    <select id="dur"><option value="3">3 days</option><option value="7">7 days</option><option value="10">10 days</option><option value="14" selected>14 days</option><option value="28">28 days</option><option value="60">60 days</option><option value="180">180 days</option></select>
+    <select id="dur"><option value="3">3 days</option><option value="7">7 days</option><option value="10">10 days</option><option value="14" selected>14 days</option><option value="28">28 days</option><option value="60">60 days</option><option value="180">180 days</option></select><small class="ih">how long it has to keep working</small>
   </label>
   <label class="slip">Launch slip <b id="slipLbl">none</b>
-    <input type="range" id="slip" min="0" max="180" value="0" step="1">
+    <input type="range" id="slip" min="0" max="180" value="0" step="1"><small class="ih">drag to delay the landing and see what breaks</small>
   </label>
   <button id="sitesBtn" class="ghost" aria-expanded="false">Sites <b id="sitesN">3</b></button>
   <button id="rulesBtn" class="ghost" aria-expanded="false">Rules</button>
@@ -113,7 +113,7 @@
 
     <section class="panel" data-tab="sky" id="panoPanel">
       <div class="phead"><h2>Sky at the landing site <span id="panoSite"></span></h2><div class="scrub"><button id="play" aria-label="Play mission">Play mission</button><input type="range" id="cursor" min="0" max="336" value="0" step="1" aria-label="Mission time"><b id="cursorLbl"></b></div></div>
-      <p class="explain">The full 360° view from the lander. The grey silhouette is the real terrain around the site, measured by NASA's LOLA laser altimeter. The yellow line is the Sun's path during the mission and the blue one is Earth's. When the Sun dips behind terrain the lander loses power. When Earth does, it loses its direct radio link.</p>
+      <div class="guide"><div><span>What you see</span><p>The view from the lander, all the way around. The grey shape is the real horizon: hills and crater rims measured by NASA's LOLA laser. The yellow line is where the Sun goes during the mission, the blue line is where Earth goes.</p></div><div><span>How to read it</span><p>When the yellow line drops behind the grey, the lander is in the dark. When the blue line does, it can't radio home. Heights are stretched so a Sun 1° up is still visible.</p></div><div><span>Try</span><p>Press <b>Play mission</b> or drag the slider. The two circles on the right show the Sun and Earth at true size, and how much of each is hidden.</p></div></div>
       <div class="panoWrap">
         <canvas id="pano" class="cv" height="300"></canvas>
         <div class="zooms">
@@ -127,15 +127,15 @@
 
     <section class="panel" data-tab="sky" id="tlPanel">
       <div class="phead"><h2>Mission timeline</h2><button id="csv" class="ghost planner-only">Export CSV</button></div>
-      <p class="explain">Each row is one site across the whole mission. Yellow means the Sun is above the terrain (power) and blue means Earth is visible (direct communication). Gaps are the dangerous parts. The bottom rows show which Deep Space Network complexes on Earth have the Moon in their sky to listen.</p>
-      <div class="legend"><i style="background:#e0a000"></i>Sun elevation <i style="background:#8d8a80"></i>terrain toward the Sun <i style="background:#1f6fd6"></i>Earth elevation <i class="dash"></i>terrain toward Earth <i style="background:#12a889"></i>DSN complex has the Moon above 10°</div>
+      <div class="guide"><div><span>What you see</span><p>The whole mission, hour by hour (left = landing, right = the end), for every site you picked.</p></div><div><span>How to read it</span><p>Top chart: how high the Sun (yellow) and Earth (blue) are at site A, with the hills in that direction in grey. Strips below: one pair per site, bright = Sun up or Earth in view, dark = not. Green rows: which NASA Deep Space Network dish can hear the Moon.</p></div><div><span>Try</span><p>Click anywhere on it to jump to that hour. The orange line is the moment you're looking at.</p></div></div>
+      <div class="legend"><i style="background:#e0a000"></i>Sun elevation <i style="background:#8d8a80"></i>terrain toward the Sun <i style="background:#1f6fd6"></i>Earth elevation <i class="dash"></i>terrain toward Earth <i style="background:#12a889"></i>a NASA dish on Earth can see the Moon</div>
       <canvas id="timeline" class="cv" height="260"></canvas>
     </section>
 
     <section class="panel" data-tab="power" id="enPanel">
       <div class="phead"><h2>Will the lander survive? <small>battery model</small></h2>
         <select id="enPreset" aria-label="Lander preset"><option value="650,300,50,1500">Small lander (example)</option><option value="250,120,25,800">Rover (example)</option><option value="900,350,60,30000">Night-survival lander, large battery (example)</option></select></div>
-      <p class="explain">Sunlight only matters because it becomes power. Give the lander a solar array and a battery and watch the charge over the mission. The line falls whenever terrain (or Earth) hides the Sun. If it hits zero, the lander dies. The numbers are examples, so change them.</p>
+      <div class="guide"><div><span>What you see</span><p>A simple battery for your lander, run on the real sunlight at each site. You set the lander: <b>solar array</b> = power from the panels in full Sun, <b>awake load</b> = what it uses while working, <b>sleep load</b> = what it needs to survive the dark, <b>battery</b> = energy it can store, <b>downlink</b> = data rate home.</p></div><div><span>How to read it</span><p>Each line is one site's battery charge from landing (left) to the end (right). It falls whenever the Sun is hidden. Red marks along the bottom mean the battery is empty and the lander is dead. The boxes below give the verdict and how much data it could send home.</p></div><div><span>Try</span><p>Pick <b>Rover</b> from the menu, or make the battery smaller until a site runs out.</p></div></div>
       <div class="enIn">
         <label>Solar array <span><input id="enArr" type="number" min="0" step="50"> W</span></label>
         <label>Awake load <span><input id="enLoad" type="number" min="0" step="10"> W</span></label>
@@ -150,20 +150,20 @@
 
     <section class="panel" data-tab="slip" id="calPanel">
       <div class="phead"><h2>Landing-window calendar <small>next 24 months, click a day to land then</small></h2></div>
-      <p class="explain">What if the launch slips? Every column is a possible landing day. The colour says whether a mission of the chosen length would meet the rules if it landed that day. Drag the "Launch slip" slider and watch good windows open and close.</p>
-      <div class="legend"><i class="go"></i>GO <i class="marg"></i>marginal <i class="nogo"></i>NO-GO <i class="lineA"></i>planned <i class="lineB"></i>after slip</div>
+      <div class="guide"><div><span>What you see</span><p>Every possible landing day for the next two years, one row per site.</p></div><div><span>How to read it</span><p>Each thin column is one landing day. <b>Green</b> = a mission landing that day meets your rules, <b>amber</b> = close, <b>dark red</b> = no. The thin yellow and blue lines under each row show how much Sun and Earth link that mission would get. White line = your planned date, orange line = the date after the slip.</p></div><div><span>Try</span><p>Hover a day for its numbers, click a green day to land then, or drag <b>Launch slip</b> at the top.</p></div></div>
+      <div class="legend"><i class="go"></i>GO <i class="marg"></i>marginal <i class="nogo"></i>NO-GO <i class="lineA"></i>planned date <i class="lineB"></i>date after the slip</div>
       <div class="calWrap"><canvas id="cal" class="cv" height="160"></canvas><div id="calTip" class="tip" hidden></div></div>
     </section>
 
     <section class="panel" data-tab="slip" id="rankPanel">
       <div class="phead"><h2>Which site forgives a slip? <small id="rankInfo"></small></h2></div>
-      <p class="explain">The calendar above, run for every site in the list and sorted by how many of the next 730 landing days are GO. A site with long unbroken windows can absorb a launch delay. A site with thin slivers cannot.</p>
+      <div class="guide"><div><span>What you see</span><p>The same two-year calendar for all 19 sites, ranked from most to fewest good landing days.</p></div><div><span>How to read it</span><p><b>GO days</b> = how many of the 730 landing days work. <b>Longest window</b> = most good days in a row, so the bigger it is, the easier it is to absorb a delay. <b>Slip margin</b> = how many days you can slip from your date before it stops working.</p></div><div><span>Try</span><p>Press <b>Compare</b> to add a site to your plan.</p></div></div>
       <div id="rank" class="rank"></div>
     </section>
 
     <section class="panel" data-tab="rescue" id="rescuePanel">
       <div class="phead"><h2>Rescue the mission</h2></div>
-      <p class="explain">When a delay breaks the plan, engineers need alternatives fast: a later date at the same site, a different site, or a slightly different spot nearby. Earthset searches all three.</p>
+      <div class="guide"><div><span>What you see</span><p>Three ways out when your date doesn't work, for the site you're focused on.</p></div><div><span>How to read it</span><p>Left: the next date that works at the same site. Middle: every other site on the same date, best first. Right: spots a few hundred metres away on the same terrain, tested one by one.</p></div><div><span>Try</span><p>Press <b>Land then</b>, <b>Compare</b> or <b>Use</b> to switch your plan to that option.</p></div></div>
       <div id="rescue"></div>
     </section>
 
@@ -171,7 +171,7 @@
       <div class="phead"><h2>Shadow map around the site</h2>
         <div class="tools"><div class="seg" id="lmLayer"><button data-l="sun" class="on">Sunlight</button><button data-l="earth">Earth link</button></div>
         <div class="seg" id="lmView"><button data-v="2d" class="on">Flat map</button><button data-v="3d">3D relief</button></div></div></div>
-      <p class="explain">Earthset casts real shadows across the LOLA terrain around the site, pixel by pixel. "This moment" shows where sunlight falls right now and then follows the mission clock, so pressing Play makes the shadows sweep. "Whole mission" averages the mission to reveal the best-lit ground. Switch to 3D relief and drag to orbit the terrain. On the flat map, click any point to add it as a landing site.</p>
+      <div class="guide"><div><span>What you see</span><p>The ground around your site seen from above, about 26 km across, with real shadows from the terrain.</p></div><div><span>How to read it</span><p>Bright = in sunlight, dark = in shadow. The cross in the middle is your site, the yellow arrow points to the Sun. <b>Whole mission</b> averages every hour, so the brightest ground gets the most sun overall. The <b>Earth link</b> layer shows where Earth is visible instead.</p></div><div><span>Try</span><p>Hover to see height and sunlight, click a bright spot to make it a landing site, or switch to <b>3D relief</b> and drag to spin it.</p></div></div>
       <div class="lmWrap">
         <div class="lmCv"><canvas id="lm"></canvas><canvas id="lm3d" tabindex="0" aria-label="3D relief of the terrain around the site. Drag or use arrow keys to orbit." hidden></canvas><div id="lmTip" class="tip" hidden></div></div>
         <div class="lmSide">
@@ -187,7 +187,7 @@
 
     <section class="panel" data-tab="terrain" id="mapPanel">
       <div class="phead"><h2>Map</h2><div class="seg" id="mapTabs"><button data-m="south" class="on">South Pole (80°S+)</button><button data-m="zoom">Pole close-up (87.5°S+)</button><button data-m="global">Whole Moon</button></div></div>
-      <p class="explain">Shaded relief made from LOLA elevation data. The arrows show where the Sun and Earth are right now. Near the pole they sit almost on the horizon, so every hill casts a shadow kilometres long. Click to place a custom site.</p>
+      <div class="guide"><div><span>What you see</span><p>Where every site is, on a shaded map made from NASA's laser measurements of the Moon.</p></div><div><span>How to read it</span><p>Dots are sites, and the coloured ones are in your plan. The arrows point to where the Sun and Earth are right now. At the pole they sit just below or above the horizon.</p></div><div><span>Try</span><p>Switch between the south pole, a close-up and the whole Moon. Click anywhere to add a custom site there.</p></div></div>
       <div class="mapWrap"><canvas id="map" class="cv"></canvas></div>
     </section>
 

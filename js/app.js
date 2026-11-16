@@ -117,9 +117,9 @@ function renderCards() {
       <header><h3>${tagHtml(id)}<span>${s.name}</span></h3><span class="badge ${v.level}${flip ? ' flip' : ''}">${v.level === 'go' ? 'GO' : v.level === 'marginal' ? 'MARGINAL' : 'NO-GO'}</span></header>
       <div class="ll">${fmtLL(s)} · ${s.ground >= 0 ? '+' : ''}${s.ground} m${s.approx ? ' · illustrative point' : ''}${s.custom ? ` · ${s.res} m grid` : ''}</div>
       <div class="kv">
-        <div><b data-k="${id}:sun" data-v="${m.sunPct}" data-f="pct"></b><i class="meter" style="--m:var(--sun)"><i class="mfill" data-k="${id}:sunm" data-v="${m.sunPct}"></i></i>sunlit</div>
-        <div><b data-k="${id}:com" data-v="${m.commPct}" data-f="pct"></b><i class="meter" style="--m:var(--earth)"><i class="mfill" data-k="${id}:comm" data-v="${m.commPct}"></i></i>Earth link</div>
-        <div><b data-k="${id}:dark" data-v="${m.maxDarkH}" data-f="dur"></b>longest darkness</div><div><b data-k="${id}:out" data-v="${m.maxOutageH}" data-f="dur"></b>longest link outage</div>
+        <div><b data-k="${id}:sun" data-v="${m.sunPct}" data-f="pct"></b><i class="meter" style="--m:var(--sun)"><i class="mfill" data-k="${id}:sunm" data-v="${m.sunPct}"></i></i>of the time in sunlight</div>
+        <div><b data-k="${id}:com" data-v="${m.commPct}" data-f="pct"></b><i class="meter" style="--m:var(--earth)"><i class="mfill" data-k="${id}:comm" data-v="${m.commPct}"></i></i>of the time Earth is in view</div>
+        <div><b data-k="${id}:dark" data-v="${m.maxDarkH}" data-f="dur"></b>longest night</div><div><b data-k="${id}:out" data-v="${m.maxOutageH}" data-f="dur"></b>longest time Earth is hidden</div>
         <div class="planner-only"><b>${sl.ok ? sl.margin + (sl.open ? '+' : '') + ' d' : sl.next == null ? 'none' : sl.next + ' d'}</b>${sl.ok ? 'slip margin before this window closes' : sl.next == null ? 'GO day in the next 24 months' : 'until the next GO landing day'}</div>
         <div class="planner-only"><b>${sl.go}</b>of ${sl.end} landing days are GO</div>
         <div class="planner-only"><b>${m.peakSunEl.toFixed(1)}°</b>peak Sun elevation</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
@@ -195,7 +195,8 @@ function drawPano() {
   for (let e = Math.ceil(bot / stepEl) * stepEl; e <= top; e += stepEl) c.fillText(e + '°', ml - 5, Y(e) + 3);
   c.textAlign = 'center'; const names = { 0: 'N', 90: 'E', 180: 'S', 270: 'W', 360: 'N' };
   for (let a = 0; a <= 360; a += 45) c.fillText(names[a] || a + '°', X(a), h - 6);
-  c.textAlign = 'left';
+  c.textAlign = 'left'; c.font = '11px Archivo,sans-serif'; c.fillStyle = '#d8d4ca';
+  c.fillText('Looking all the way around from the lander. Up = degrees above the horizon, along the bottom = compass direction.', ml + 8, mt + 14);
   drawZoom($('#zSun'), s, S, i, 0); drawZoom($('#zEarth'), s, S, i, 1);
 }
 
@@ -237,7 +238,7 @@ function renderCountdown() {
 // ---------- timeline ----------
 function drawTimeline() {
   const rows = st.sel.length, { c, w, h } = fit($('#timeline'), 214 + rows * 34);
-  const ml = 40, mr = 26, pw = w - ml - mr, top = 8, ph = 130, n = N(), l0 = L();
+  const ml = 92, mr = 26, pw = w - ml - mr, top = 8, ph = 130, n = N(), l0 = L();
   const s = site(st.focus), S = series(s), X = (k) => ml + (k - l0) / n * pw;
   let lo = -2, hi = 4; const hs = new Float32Array(n), he = new Float32Array(n);
   for (let k = 0; k < n; k++) { const i = l0 + k; hs[k] = horizonAt(s.hzo, S.sunAz[i]); he[k] = horizonAt(s.hzo, S.earthAz[i]); lo = Math.min(lo, S.sunEl[i], hs[k], Math.max(S.earthEl[i], -10)); hi = Math.max(hi, S.sunEl[i], hs[k], S.earthEl[i]); }
@@ -251,12 +252,14 @@ function drawTimeline() {
   c.restore();
   c.font = 'condensed 11px "Martian Mono",monospace'; c.fillStyle = '#aaa69a'; c.textAlign = 'right';
   const stp = hi - lo > 40 ? 20 : hi - lo > 15 ? 5 : 2; for (let e = Math.ceil(lo / stp) * stp; e <= hi; e += stp) { c.fillText(e + '°', ml - 5, Y(e) + 3); c.strokeStyle = '#ffffff10'; c.beginPath(); c.moveTo(ml, Y(e)); c.lineTo(ml + pw, Y(e)); c.stroke(); }
-  c.textAlign = 'left';
+  c.textAlign = 'left'; c.font = '11px Archivo,sans-serif'; c.fillStyle = '#d8d4ca';
+  c.fillText(`Height above the horizon at ${tagOf(st.focus)} ${s.name.replace(/ \(.*/, '')}:  Sun (yellow), Earth (blue), hills (grey)`, ml + 8, top + 14);
+  c.save(); c.translate(14, top + ph / 2); c.rotate(-Math.PI / 2); c.textAlign = 'center'; c.fillStyle = '#aaa69a'; c.font = '10px Archivo,sans-serif'; c.fillText('degrees', 0, 0); c.restore();
   // bands per site
   let y = top + ph + 20;
   for (const id of st.sel) {
     const q = site(id), Q = series(q);
-    c.fillStyle = colorOf(id); c.fillRect(ml - 34, y + 3, 16, 16); c.fillStyle = '#fff'; c.font = '700 condensed 11px "Martian Mono",monospace'; c.textAlign = 'center'; c.fillText(tagOf(id), ml - 26, y + 15); c.textAlign = 'left'; c.fillStyle = '#e9e6dc'; c.font = '11px Archivo,sans-serif'; c.fillText(q.name, ml, y - 3);
+    c.fillStyle = colorOf(id); c.fillRect(6, y + 3, 16, 16); c.fillStyle = '#fff'; c.font = '700 condensed 11px "Martian Mono",monospace'; c.textAlign = 'center'; c.fillText(tagOf(id), 14, y + 15); c.textAlign = 'right'; c.fillStyle = '#ffc857'; c.font = '10px Archivo,sans-serif'; c.fillText('Sun up', ml - 6, y + 10); c.fillStyle = '#8cc4ff'; c.fillText('Earth in view', ml - 6, y + 20); c.textAlign = 'left'; c.fillStyle = '#e9e6dc'; c.font = '11px Archivo,sans-serif'; c.fillText(q.name, ml, y - 3);
     const cw = Math.max(1, pw / n + 0.6);
     for (let k = 0; k < n; k++) { const i = l0 + k, x = X(i);
       c.fillStyle = `rgba(255,200,87,${Q.sunVis[i] < LIT_MIN ? 0.07 : 0.25 + 0.75 * Q.sunVis[i]})`; c.fillRect(x, y + 2, cw, 8);
@@ -264,9 +267,9 @@ function drawTimeline() {
     y += 34;
   }
   // Earth side: Deep Space Network complexes with the Moon in their sky
-  c.fillStyle = '#e9e6dc'; c.font = '11px Archivo,sans-serif'; c.fillText(`Deep Space Network complexes with the Moon above ${MASK_DEG}°`, ml, y - 3);
+  c.fillStyle = '#e9e6dc'; c.font = '11px Archivo,sans-serif'; c.fillText(`NASA Deep Space Network dishes that can see the Moon (Moon more than ${MASK_DEG}° up)`, ml, y - 3);
   { const dsn = dsnSeries(landMs(), n), cw = Math.max(1, pw / n + 0.6); c.font = 'condensed 10px "Martian Mono",monospace';
-    STATIONS.forEach((sn, q) => { c.fillStyle = '#aaa69a'; c.textAlign = 'right'; c.fillText(sn.id, ml - 5, y + 9 + q * 10); c.textAlign = 'left';
+    STATIONS.forEach((sn, q) => { c.fillStyle = '#aaa69a'; c.textAlign = 'right'; c.fillText(sn.name, ml - 6, y + 9 + q * 10); c.textAlign = 'left';
       for (let k = 0; k < n; k++) { c.fillStyle = dsn[k] >> q & 1 ? '#12a889' : 'rgba(18,168,137,0.12)'; c.fillRect(X(l0 + k), y + 2 + q * 10, cw, 8); } }); }
   // day ticks + cursor
   const dstep = st.dur <= 14 ? 1 : st.dur <= 60 ? 5 : 20; c.fillStyle = '#aaa69a'; c.font = 'condensed 11px "Martian Mono",monospace'; c.textAlign = 'center';
@@ -451,7 +454,7 @@ addEventListener('hashchange', async () => { if (!eph) return; await readHash();
 
 // ---------- energy model ----------
 function drawEnergy() {
-  const { c, w, h } = fit($('#energy'), 170), ml = 40, pw = w - ml - 26, top = 8, ph = h - 30, n = N(), l0 = L();
+  const { c, w, h } = fit($('#energy'), 190), ml = 40, pw = w - ml - 26, top = 8, ph = h - 30, n = N(), l0 = L();
   const X = (k) => ml + k / n * pw, Y = (v) => top + (1 - v) * ph;
   c.fillStyle = '#0b0b0a'; c.fillRect(ml, top, pw, ph);
   c.font = 'condensed 11px "Martian Mono",monospace'; c.fillStyle = '#aaa69a'; c.textAlign = 'right';
@@ -469,6 +472,7 @@ function drawEnergy() {
   const dstep = st.dur <= 14 ? 1 : st.dur <= 60 ? 5 : 20; c.fillStyle = '#aaa69a'; c.textAlign = 'center';
   for (let d = 0; d <= st.dur; d += dstep) c.fillText('T+' + d + 'd', X(d * 24), h - 6);
   c.textAlign = 'left'; c.strokeStyle = '#ff5a36'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X(st.cur), top); c.lineTo(X(st.cur), top + ph); c.stroke();
+  c.font = '11px Archivo,sans-serif'; c.fillStyle = '#d8d4ca'; c.textAlign = 'left'; c.fillText('Battery charge, from landing (left) to the end of the mission (right)', ml + 8, top + 14);
   $('#enOut').innerHTML = out;
 }
 for (const [id, key] of [['enArr', 'arrayW'], ['enLoad', 'loadW'], ['enSleep', 'sleepW'], ['enBatt', 'battWh'], ['enMbps', 'mbps']]) $('#' + id).addEventListener('input', (e) => { st.en[key] = Math.max(0, +e.target.value || 0); drawEnergy(); });
@@ -625,7 +629,7 @@ function setupHelp() {
     hd.appendChild(b);
   }
 }
-setupHelp(); setTab('answer', false);
+setTab('answer', false);
 
 // ---------- AI key (optional, stays in this browser) ----------
 function syncAiUi() { const m = aiMode(), own = !!getKey(); $('#aiState').textContent = own ? 'Your key' : m === 'server' ? 'Built in' : 'Off'; $('#aiState').classList.toggle('on', !!m); $('#aiForget').hidden = !own; $('#askMode').hidden = !m; }

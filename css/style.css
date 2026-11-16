@@ -398,3 +398,13 @@ footer { color: var(--ink3); font-size: 14px; padding: var(--s7) var(--gutter); 
 .lcT th, .lcT td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgba(128, 128, 128, .25); }
 .lcT th { font-weight: 500; opacity: .7; }
 .lcBox { margin: var(--s2) 0 var(--s4); } .lcBox .lcOut { color: var(--ink2); } .lcBox .lcOut b { color: var(--go); }
+/* panel guides: what you see / how to read it / try */
+.guide { display: grid; grid-template-columns: 1.1fr 1.4fr .9fr; gap: var(--s3); margin: 0 0 var(--s5); }
+.guide > div { background: var(--bg); border-radius: var(--r1); padding: var(--s3) var(--s4); }
+.guide span { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.guide p { font-size: 14px; line-height: 1.5; color: var(--ink2); } .guide p b { color: var(--ink); font-weight: 600; }
+.guide > div:last-child { background: #fff4ec; }
+.ih { display: block; font-size: 11.5px; color: var(--ink3); font-weight: 400; margin-top: 2px; }
+.help { display: none !important; }
+body.planner .guide { display: none; }
+@media (max-width: 900px) { .guide { grid-template-columns: 1fr; } }
