@@ -5,6 +5,7 @@ import { Ephemeris } from './ephem.js';
 import { PolarDEM, CylDEM, TerrainStack, computeHorizon, deltaDecode, fetchGzI16, offsetLL, lightMap } from './terrain.js';
 import { R_SUN } from './ephem.js';
 import { buildSeries, windowMetrics, verdict, HOUR } from './analysis.js';
+import { sunRoute } from './route.js';
 
 let eph = null, manifest = null;
 const dems = {};
@@ -63,7 +64,15 @@ onmessage = async (e) => {
         eph.pos(1, t, v); return { s, rS, e: [v[0] * 1000, v[1] * 1000, v[2] * 1000] };
       };
       if (!m.quiet) postMessage({ type: 'status', text: 'Casting terrain shadows…' });
-      const r = lightMap(T, m.lat, m.lon, m.mast, m.N, res, m.times, sunEarth, { maxDist: m.maxDist || 150e3, onProgress: (a, b) => { if (b > 1) postMessage({ type: 'status', text: `Casting terrain shadows… ${a}/${b} moments` }); } });
+      const r = lightMap(T, m.lat, m.lon, m.mast, m.N, res, m.times, sunEarth, { frames: !!m.route, maxDist: m.maxDist || 150e3, onProgress: (a, b) => { if (b > 1) postMessage({ type: 'status', text: `Casting terrain shadows… ${a}/${b} moments` }); } });
+      if (m.route) {
+        postMessage({ type: 'status', text: 'Searching every drive for the one that stays in the light…' });
+        const c = Math.round((r.N - 1) / 2), start = c * r.N + c;
+        const R = sunRoute(r.frames, m.times.length, r.N, r.res, r.h, start, { speed: m.route.speed, dtH: m.route.dtH, maxSlopeDeg: m.route.maxSlopeDeg });
+        delete r.frames;
+        postMessage({ type: 'lightmap', req: m.req, ...r, route: R }, [r.lit.buffer, r.comm.buffer, r.h.buffer]);
+        return;
+      }
       postMessage({ type: 'lightmap', req: m.req, ...r }, [r.lit.buffer, r.comm.buffer, r.h.buffer]);
       return;
     }

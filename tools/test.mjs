@@ -68,4 +68,17 @@ console.log('Sites and mission logic');
   ok('Energy model: a big enough battery survives the night', big.deadAtH == null && big.minSoc > 0, 'min ' + (big.minSoc * 100).toFixed(0) + '%');
   ok('Energy model: charge stays between 0 and 100%', hot.soc.every(x => x >= 0 && x <= 1)); }
 
+{ console.log('Follow the light');
+  const { sunRoute } = await import('../js/route.js');
+  // 15x15 flat grid, 120 m pixels. The landing pixel (centre) is dark every other frame;
+  // a pixel 3 east is always lit. A rover fast enough to get there should find it.
+  const N = 15, px = N * N, T = 9, c = 7 * N + 7, tgt = 7 * N + 10, F = new Uint8Array(T * px), H = new Float32Array(px);
+  for (let n = 0; n < T; n++) { F[n * px + c] = n % 2 ? 0 : 255; F[n * px + tgt] = 255; }
+  const R = sunRoute(F, T, N, 120, H, c, { speed: 120, dtH: 3, maxSlopeDeg: 20 });
+  ok('Route: parked rover gets the sunlight it should', Math.abs(R.parkedPct - 100 * 5 / 9) < 0.5, R.parkedPct.toFixed(1) + '%');
+  ok('Route: rover drives to the always-lit spot and beats parking', R.routePct > 85 && R.path[T - 1] === tgt, R.routePct.toFixed(1) + '%');
+  const wall = new Float32Array(px); for (let j = 0; j < N; j++) wall[j * N + 9] = 500;   // a cliff between start and target
+  const R2 = sunRoute(F, T, N, 120, wall, c, { speed: 120, dtH: 3, maxSlopeDeg: 20 });
+  ok('Route: a cliff steeper than the limit cannot be crossed', !Array.from(R2.path).some(k => k % N >= 9)); }
+
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -279,7 +279,7 @@ function drawTimeline() {
   $('#timeline')._geo = { ml, pw };
 }
 function dsnSeries(t0, n) { const key = t0 + '|' + n; if (dsnSeries.key !== key) { const a = new Uint8Array(n); for (let k = 0; k < n; k++) a[k] = stationsInView(t0 + k * HOUR); dsnSeries.key = key; dsnSeries.a = a; } return dsnSeries.a; }
-function scrub() { $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); drawMap(); if (!playing) describeCharts(); }
+function scrub() { $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); liveLm(); drawMap(); if (lm && lm.route && tab === 'terrain') drawLm(); if (!playing) describeCharts(); }
 function timelinePick(e) { const g = $('#timeline')._geo; if (!g) return; const r = e.target.getBoundingClientRect(); stopPlay(); st.cur = Math.max(0, Math.min(N() - 1, Math.round((e.clientX - r.left - g.ml) / g.pw * N()))); $('#cursor').value = st.cur; rangeFill($('#cursor')); drawPano(); renderCountdown(); drawTimeline(); drawEnergy(); drawMap(); }
 $('#timeline').addEventListener('pointerdown', (e) => { timelinePick(e); e.target.setPointerCapture(e.pointerId); e.target.onpointermove = timelinePick; });
 $('#timeline').addEventListener('pointerup', (e) => { e.target.onpointermove = null; });
@@ -488,6 +488,7 @@ function runLm(mode, quiet) {
   for (let k = 0; k < n; k++) times.push(mode === 'now' ? landMs() + st.cur * HOUR : landMs() + (k + 0.5) / n * N() * HOUR);
   lmBusy = true; if (!quiet) $('#lmNow').disabled = $('#lmMission').disabled = true;
   return ask({ type: 'lightmap', lat: s.lat, lon: s.lon, mast: s.mast, N: 220, times, quiet }).then(r => {
+    $('#rtOut').textContent = '';
     lm = { N: r.N, res: r.res, lit: r.lit, comm: r.comm, h: r.h, mode, id: s.id, lat: s.lat, lon: s.lon, mast: s.mast, when: times[0], land: landMs(), dur: st.dur, cur: st.cur, sunAz: series(s).sunAz[L() + st.cur] };
     drawLm();
   }).catch(e => toast('Shadow map failed: ' + e.message, 4000)).finally(() => { lmBusy = false; $('#lmNow').disabled = $('#lmMission').disabled = false; if (lmQueued) { const q = lmQueued; lmQueued = null; runLm(q); } });
@@ -522,8 +523,17 @@ function drawLm() {
   c.fillStyle = '#000a'; c.fillRect(10, h - 30, bw + 16, 22); c.fillStyle = '#fff'; c.fillRect(18, h - 14, bw, 2); c.font = 'condensed 11px "Martian Mono",monospace'; c.fillText(nice >= 1000 ? nice / 1000 + ' km' : nice + ' m', 18, h - 18);
   c.fillStyle = '#000a'; c.fillRect(w - 34, 10, 24, 34); c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('N', w - 22, 23); c.beginPath(); c.moveTo(w - 22, 27); c.lineTo(w - 27, 39); c.lineTo(w - 17, 39); c.fill(); c.textAlign = 'left';
   if (lm.mode === 'now' && lmLayer === 'sun') { const ax = w / 2 + Math.sin(lm.sunAz * D2R) * (w / 2 - 26), ay = h / 2 - Math.cos(lm.sunAz * D2R) * (h / 2 - 26); c.fillStyle = '#ffc857'; c.beginPath(); c.arc(ax, ay, 6, 0, 7); c.fill(); c.strokeStyle = '#ffc85788'; c.setLineDash([2, 5]); c.beginPath(); c.moveTo(ax, ay); c.lineTo(w / 2, h / 2); c.stroke(); c.setLineDash([]); c.fillText('Sun', ax + 9, ay + 4); }
+  if (lm.route && lmLayer === 'sun') {
+    const R = lm.route, P = (k) => [((k % n) + 0.5) / n * w, (Math.floor(k / n) + 0.5) / n * h];
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let q = 1; q < R.path.length; q++) { const [x0, y0] = P(R.path[q - 1]), [x1, y1] = P(R.path[q]); c.strokeStyle = '#000c'; c.lineWidth = 6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = R.litPath[q] >= 0.5 ? '#ffd166' : '#8a8a8a'; c.lineWidth = 3; c.stroke(); }
+    const [ex, ey] = P(R.path[R.path.length - 1]); c.fillStyle = '#ffd166'; c.strokeStyle = '#000'; c.lineWidth = 2; c.beginPath(); c.arc(ex, ey, 6, 0, 7); c.fill(); c.stroke();
+    if (R.distM > 1) { const lbl = `drive: ${R.distM < 1000 ? Math.round(R.distM) + ' m' : (R.distM / 1000).toFixed(1) + ' km'}`; c.font = '600 13px "Inter Tight",Archivo,sans-serif'; const tw = c.measureText(lbl).width, lx = Math.min(w - tw - 18, ex + 12), ly = Math.min(h - 40, ey + 28); c.fillStyle = "#000c"; c.fillRect(lx - 6, ly - 15, tw + 12, 22); c.fillStyle = '#ffd166'; c.textAlign = 'left'; c.fillText(lbl, lx, ly); }
+    const f = Math.max(0, Math.min(R.path.length - 1, Math.round(st.cur / lm.routeDt))), [rx, ry] = P(R.path[f]);
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(rx, ry, 7, 0, 7); c.fill(); c.strokeStyle = '#ea580c'; c.lineWidth = 3; c.stroke();
+  }
   const stale = lm.land !== landMs() || lm.dur !== st.dur || (lm.mode === 'now' && lm.cur !== st.cur);
-  $('#lmInfo').innerHTML = (lm.mode === 'now' ? `Shadows at <b>${fmtDate(lm.when)}</b>.` : `Average of 36 moments across a ${lm.dur}-day mission landing <b>${fmtDate(lm.land, true)}</b>.`) + ` ${(span / 1000).toFixed(span < 30000 ? 1 : 0)} km across, ${Math.round(lm.res)} m per pixel. ${lmLayer === 'earth' ? 'Earth is in view from' : 'Sunlight reaches'} <b>${(sum / (n * n) * 100).toFixed(0)}%</b> of this ground${lm.mode === 'mission' ? ' on average' : ''}.` + (stale ? ' <span style="color:var(--marg)">Settings changed. Recompute to update.</span>' : '');
+  $('#lmInfo').innerHTML = (lm.mode === 'now' ? `Shadows at <b>${fmtDate(lm.when)}</b>.` : `Average of ${lm.nT || 36} moments across a ${lm.dur}-day mission landing <b>${fmtDate(lm.land, true)}</b>.`) + ` ${(span / 1000).toFixed(span < 30000 ? 1 : 0)} km across, ${Math.round(lm.res)} m per pixel. ${lmLayer === 'earth' ? 'Earth is in view from' : 'Sunlight reaches'} <b>${(sum / (n * n) * 100).toFixed(0)}%</b> of this ground${lm.mode === 'mission' ? ' on average' : ''}.` + (stale ? ' <span style="color:var(--marg)">Settings changed. Recompute to update.</span>' : '');
 }
 function lmAt(e) { const r = $('#lm').getBoundingClientRect(), n = lm.N, i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n))), j = Math.max(0, Math.min(n - 1, Math.floor((e.clientY - r.top) / r.height * n))); return { i, j, k: j * n + i, de: (i - (n - 1) / 2) * lm.res, dn: ((n - 1) / 2 - j) * lm.res, x: e.clientX - r.left, y: e.clientY - r.top }; }
 $('#lm').addEventListener('mousemove', (e) => { const t = $('#lmTip'); if (!lm || lm.id !== st.focus) { t.hidden = true; return; } const p = lmAt(e), dist = Math.hypot(p.de, p.dn);
@@ -554,7 +564,7 @@ const TOUR = [
   { sel: '#calPanel', title: 'Two years of landing days at a glance', text: 'Each column is a possible landing day, coloured by whether the mission would meet the rules. The white line is the plan; the blue line is where the slip put us. Click any green day to land then.' },
   { sel: '#rankPanel', title: 'Which site forgives a slip?', text: 'The same calendar, run for every site in the list and ranked. A site with long green stretches can absorb a delay. One with thin slivers leaves no room for error.' },
   { sel: '#rescuePanel', title: 'Rescue the mission', text: 'Earthset searches for a way out: the next good date at this site (here, just three days later), a better site for the same date, or a better-lit spot a short drive away.' },
-  { sel: '#lmPanel', title: 'Real shadows on real terrain', text: 'Here it casts shadows across the ground around the site and plays the mission, so you can watch them sweep. With the Sun this low, a small ridge throws a shadow kilometres long. Click any bright spot to try it as a landing site, or switch to 3D relief and orbit the terrain.', after() { runLm('now').then(() => { if (tourK === TOUR.findIndex(q => q.sel === '#lmPanel')) startPlay(); }); } },
+  { sel: '#lmPanel', title: 'Real shadows on real terrain', text: 'Here it casts shadows across the ground around the site and plays the mission, so you can watch them sweep. With the Sun this low, a small ridge throws a shadow kilometres long. Click any bright spot to try it as a landing site. Or press Follow the light and Earthset plans a rover drive that stays in the sunshine.', after() { runLm('now').then(() => { if (tourK === TOUR.findIndex(q => q.sel === '#lmPanel')) startPlay(); }); } },
   { sel: '#enPanel', title: 'Sunlight becomes survival', text: 'Give the lander a solar array and a battery. The charge falls whenever terrain hides the Sun; if it reaches zero, the mission is over. Change the numbers to design a lander that survives.' },
   { sel: '#about', title: 'Check our numbers', text: 'Every Sun and Earth position matches NASA/JPL Horizons to 0.00003°. The tool reproduces the eclipse that Blue Ghost photographed from the Moon in March 2025 to within four minutes. 28 automated tests check the maths.' },
 ];
@@ -684,6 +694,27 @@ for (const id of ['pano', 'timeline', 'cal', 'energy', 'map']) $('#' + id).setAt
     const n = e.key === 'ArrowRight' ? (k + 1) % bs.length : e.key === 'ArrowLeft' ? (k - 1 + bs.length) % bs.length : e.key === 'Home' ? 0 : e.key === 'End' ? bs.length - 1 : -1;
     if (n >= 0) { e.preventDefault(); bs[n].focus(); bs[n].click(); } });
   new MutationObserver(() => { for (const b of tl.querySelectorAll('button')) b.setAttribute('aria-selected', String(b.classList.contains('on'))); }).observe(tl, { subtree: true, attributes: true, attributeFilter: ['class'] }); }
+
+// ---------- follow the light: a rover drive that stays in sunlight ----------
+let routeBusy = false;
+function runRoute() {
+  if (routeBusy || lmBusy) { toast('One moment, still working on the last map'); return; }
+  const s = site(st.focus), T = Math.min(61, st.dur * 4 + 1), dtH = st.dur * 24 / (T - 1), speed = +$('#rtSpeed').value, times = [];
+  for (let k = 0; k < T; k++) times.push(landMs() + k * dtH * HOUR);
+  routeBusy = lmBusy = true; $('#rtBtn').disabled = $('#lmNow').disabled = $('#lmMission').disabled = true; $('#rtOut').textContent = 'Casting shadows for every 6 hours of the mission, then testing every possible drive. This takes about half a minute.';
+  return ask({ type: 'lightmap', lat: s.lat, lon: s.lon, mast: s.mast, N: 100, times, route: { speed, dtH, maxSlopeDeg: 20 } }).then(r => {
+    lm = { N: r.N, res: r.res, lit: r.lit, comm: r.comm, h: r.h, mode: 'mission', nT: T, id: s.id, lat: s.lat, lon: s.lon, mast: s.mast, when: times[0], land: landMs(), dur: st.dur, cur: st.cur, sunAz: 0, route: r.route, routeDt: dtH, routeSpeed: speed };
+    lmLayer = 'sun'; for (const b of $('#lmLayer').children) b.classList.toggle('on', b.dataset.l === 'sun');
+    drawLm(); describeRoute();
+  }).catch(e => { $('#rtOut').textContent = 'Route planning failed: ' + e.message; }).finally(() => { routeBusy = lmBusy = false; $('#rtBtn').disabled = $('#lmNow').disabled = $('#lmMission').disabled = false; });
+}
+function describeRoute() {
+  const R = lm && lm.route; if (!R) { $('#rtOut').textContent = ''; return; }
+  const km = R.distM / 1000, gain = R.routePct - R.parkedPct;
+  $('#rtOut').innerHTML = `<div class="rtCmp"><div><small>Parked at the site</small><b>${R.parkedPct.toFixed(0)}%</b><span>sunlight · longest night ${R.parkedDarkH ? fmtDur(R.parkedDarkH) : 'under 6 h'}</span></div><div class="win"><small>Following the light</small><b>${R.routePct.toFixed(0)}%</b><span>sunlight · longest night ${R.routeDarkH ? fmtDur(R.routeDarkH) : 'under 6 h'}</span></div></div>
+    <p>${gain > 1 ? `Driving about <b>${km < 1 ? Math.round(R.distM) + ' m' : km.toFixed(1) + ' km'}</b> over ${lm.dur} days adds <b>${gain.toFixed(0)} points</b> of sunlight.` : 'Staying put is already about as good as it gets here.'} The yellow line on the map is the drive (grey where it is in shadow); press <b>Play mission</b> in the Sky tab and the dot follows it. Up to ${lm.routeSpeed} m per hour, avoiding slopes steeper than 20°, on the ${lm.res} m LOLA grid, checked every ${lm.routeDt.toFixed(0)} hours. Screening only: a real traverse needs finer terrain and rover limits.</p>`;
+}
+$('#rtBtn').addEventListener('click', () => runRoute());
 
 // ---------- headline answer ----------
 function renderAnswer() {

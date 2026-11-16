@@ -45,6 +45,7 @@ Source code: https://github.com/BoyTiger-1/NASA-Space-Apps
 - **Headline answer and mission card.** A one-line verdict ("2/3 sites GO; the tightest tolerates a 1-day slip") sits above the cards, and one click downloads a shareable PNG mission card.
 - **Check it live against NASA.** One button asks NASA/JPL Horizons where the Sun and Earth are right now from the site and compares it with Earthset's own answer on the spot (they agree to about 0.1 arcsecond).
 - **Mission calendar.** Sunsets, sunrises and Earth-link gaps for the planned mission download as a calendar file for Google Calendar or Outlook.
+- **Follow the light (new).** Plans a rover drive that stays in sunlight: Earthset casts shadows across the real LOLA terrain every 6 hours of the mission, then searches every drive a rover could make at its speed (avoiding slopes over 20°) for the one with the most sunlight, and compares it with staying parked. At Malapert Massif, for a 14-day mission from 15 January 2027, a 579 m drive raises sunlight from 85% to 100% and removes a 2-day-6-hour night. NASA's VIPER team described the problem this addresses: "Shadows move around the South Pole of the Moon at about the same speed the rover drives" (Mark Shirley, NASA Ames).
 - **Real missions, re-run.** The website compares Earthset with what happened to recent landers. For JAXA's SLIM (January 2024), Earthset shows the Sun in the east at landing, which explains why its west-facing panels made no power, and puts sunset on 31 January, when SLIM lost power to the lunar night. For IM-2 Athena (March 2025), it shows the Sun never above 5.4° at the target, so a crater a few hundred metres away meant shadow and an early end. For IM-1 Odysseus (February 2024), the site had sunlight until 2 March, but the tilted lander couldn't use it.
 - **Accessibility.** Text size, high contrast, colour-blind-safe colours (blue/orange), reduced motion, easier-reading spacing, answers read aloud, text descriptions of every chart for screen readers, keyboard-navigable tabs and a skip link. Settings are remembered in the browser.
 - **Eclipses.** It also catches the hours when Earth passes in front of the Sun as seen from the Moon.
@@ -95,6 +96,7 @@ Yes. We used an SI coding assistant (Anthropic's Claude) to help choose and shap
 - IAU Gazetteer of Planetary Nomenclature (USGS): feature coordinates.
 - Mazarico, E., et al. (2011). Illumination conditions of the lunar polar regions using LOLA topography. Icarus 211, 1066–1081.
 - Firefly Aerospace and NASA mission updates for Blue Ghost Mission 1 (March 2025): event times used for the real-mission check.
+- NASA, "VIPER rover will get driving headlights" (quote from Mark Shirley, NASA Ames); FOX Weather on Intuitive Machines' IM-2 statement (March 2025).
 - Mission outcomes used on the website: New Atlas and NASASpaceflight on JAXA SLIM (2024); Spaceflight Now on IM-2 Athena (2025); Universe Today on IM-1 Odysseus (2024).
 - Software: SPICE Toolkit via spiceypy, NumPy, Pillow, Node.js, Python, Google Chrome (testing).
 - SI tools: Anthropic Claude (development, see above); Google Gemini API (optional runtime assistant in the Ask bar).

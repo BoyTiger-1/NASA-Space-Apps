@@ -161,7 +161,7 @@ export function lightMap(terrain, latDeg, lonDeg, mast, N, res, times, sunEarth,
     }
     return best;
   };
-  const lit = new Float32Array(px), comm = new Float32Array(px);
+  const lit = new Float32Array(px), comm = new Float32Array(px), F = opts.frames ? new Uint8Array(times.length * px) : null;
   for (let n = 0; n < times.length; n++) {
     const { s, rS, e } = sunEarth(times[n]);
     for (let k = 0; k < px; k++) {
@@ -170,7 +170,7 @@ export function lightMap(terrain, latDeg, lonDeg, mast, N, res, times, sunEarth,
       if (el > -rS - 0.2) {
         let tx = s[0] - su * ux, ty = s[1] - su * uy, tz = s[2] - su * uz; const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
         const hmax = Math.atan(march(ux, uy, uz, tx, ty, tz, rp, Math.tan(Math.min(1.55, el + rS))));
-        const f = (el + rS - hmax) / (2 * rS); lit[k] += f <= 0 ? 0 : f >= 1 ? 1 : f;
+        const f = (el + rS - hmax) / (2 * rS), fv = f <= 0 ? 0 : f >= 1 ? 1 : f; lit[k] += fv; if (F) F[n * px + k] = Math.round(fv * 255);
       }
       let dx = e[0] - rp * ux, dy = e[1] - rp * uy, dz = e[2] - rp * uz; const dl = Math.hypot(dx, dy, dz); dx /= dl; dy /= dl; dz /= dl;
       const eu = dx * ux + dy * uy + dz * uz;
@@ -183,7 +183,7 @@ export function lightMap(terrain, latDeg, lonDeg, mast, N, res, times, sunEarth,
     if (onProgress) onProgress(n + 1, times.length);
   }
   for (let k = 0; k < px; k++) { lit[k] /= times.length; comm[k] /= times.length; }
-  return { N, res, lit, comm, h: H };
+  return F ? { N, res, lit, comm, h: H, frames: F } : { N, res, lit, comm, h: H };
 }
 
 // ---- compact DEM container used by the browser (row-delta int16, gzip) ----
