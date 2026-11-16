@@ -123,7 +123,7 @@ function renderCards() {
         <div><b data-k="${id}:dark" data-v="${m.maxDarkH}" data-f="dur"></b>longest night</div><div><b data-k="${id}:out" data-v="${m.maxOutageH}" data-f="dur"></b>longest time Earth is hidden</div>
         <div class="planner-only"><b>${sl.ok ? sl.margin + (sl.open ? '+' : '') + ' d' : sl.next == null ? 'none' : sl.next + ' d'}</b>${sl.ok ? 'slip margin before this window closes' : sl.next == null ? 'GO day in the next 24 months' : 'until the next GO landing day'}</div>
         <div class="planner-only"><b>${sl.go}</b>of ${sl.end} landing days are GO</div>
-        <div class="planner-only"><b>${m.peakSunEl.toFixed(1)}°</b>peak Sun elevation</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
+        <div><b>${m.peakSunEl.toFixed(1)}°</b>highest the Sun gets (solar elevation)</div><div class="planner-only"><b>${m.flatPct.toFixed(0)}%</b>flat-panel power index</div>
       </div>
       <p class="say">${sentence(s, m)}</p>
       ${v.fails.length ? `<p class="why">Why not: ${v.fails.join('. ')}.</p>` : ''}${v.warns.length ? `<p class="why w">Close call: ${v.warns.join('. ')}.</p>` : ''}

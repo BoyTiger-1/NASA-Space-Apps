@@ -101,6 +101,6 @@ Yes. We used an SI coding assistant (Anthropic's Claude) to help choose and shap
 - Mazarico, E., et al. (2011). Illumination conditions of the lunar polar regions using LOLA topography. Icarus 211, 1066–1081.
 - Firefly Aerospace and NASA mission updates for Blue Ghost Mission 1 (March 2025): event times used for the real-mission check.
 - NASA, "VIPER rover will get driving headlights" (quote from Mark Shirley, NASA Ames); FOX Weather on Intuitive Machines' IM-2 statement (March 2025).
-- Mission outcomes used on the website: New Atlas and NASASpaceflight on JAXA SLIM (2024); Spaceflight Now on IM-2 Athena (2025); Universe Today on IM-1 Odysseus (2024).
+- Mission outcomes used on the website: JAXA and NASASpaceflight on SLIM (2024); Spaceflight Now on IM-2 Athena (2025); Universe Today on IM-1 Odysseus (2024).
 - Software: SPICE Toolkit via spiceypy, NumPy, Pillow, Node.js, Python, Google Chrome (testing).
 - SI tools: Anthropic Claude (development, see above); Google Gemini API (optional runtime assistant in the Ask bar).
