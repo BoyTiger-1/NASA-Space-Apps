@@ -27,7 +27,7 @@ login is needed. The only server piece is optional: an AI helper for the Ask bar
 **Project:** Earthset: Lunar Landing Window Navigator
 **Challenge:** 2026 NASA Space Apps Challenge, Lunar Landing Site Navigator
 **Website:** https://boytiger-1.github.io/NASA-Space-Apps/
-**Seven-slide demo:** https://boytiger-1.github.io/NASA-Space-Apps/demo/
+**Project demo:** https://drive.google.com/file/d/1Wi_oaRwbbQ3BdMiC5q5s_HzA9GgTKL9V/view?usp=sharing
 **Source code:** https://github.com/BoyTiger-1/NASA-Space-Apps
 
 Earthset helps mission planners, students and the public see whether a lunar lander will have sunlight and
