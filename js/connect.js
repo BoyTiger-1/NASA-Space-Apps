@@ -2,7 +2,6 @@
 // never leaves the browser), is the Moon in their sky right now, and can a lander on
 // the Shackleton ridge see Earth? If both, they are in line of sight of each other.
 // Also finds the next time that happens in the coming 30 days.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { moonElevation } from './earthside.js';
 import { LIT_MIN, COMM_MIN, HOUR } from './analysis.js';
 

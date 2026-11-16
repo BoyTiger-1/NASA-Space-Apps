@@ -1,5 +1,4 @@
 // Earthset automated tests (no network needed). Run: node tools/test.mjs
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 import { Ephemeris, makeSite, azel, subPoint, R_MOON } from '../js/ephem.js';
 import { TerrainStack, computeHorizon, horizonAt, discVisible, offsetLL, lightMap } from '../js/terrain.js';

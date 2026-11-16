@@ -1,6 +1,5 @@
 // Earthset: the live sky at the top of the landing page. The Sun and Earth over the
 // real LOLA skyline of a south-pole ridge, right now; drag to move through time.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { makeSite, azel, R_SUN, R_EARTH } from './ephem.js';
 import { horizonAt, discVisible } from './terrain.js';
 import { fmtDur, HOUR, DAY, LIT_MIN, COMM_MIN } from './analysis.js';
@@ -120,4 +119,3 @@ export function startHero(eph, src) {
   draw();
   return { body, clampT };
 }
-

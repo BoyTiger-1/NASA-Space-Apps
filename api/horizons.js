@@ -2,7 +2,6 @@
 // as seen from a point on the Moon at a given minute. The browser then compares the
 // answer with Earthset's own calculation, live. (Horizons does not allow direct
 // browser requests, so this small proxy is needed.) No key or secret involved.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 const MON = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
 async function ask(body, lat, lon, t) {

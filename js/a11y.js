@@ -1,7 +1,6 @@
 // Earthset: accessibility settings, shared by the website and the planner.
 // Text size, high contrast, colour-blind-safe colours, reduced motion, easier-to-read
 // spacing, and reading answers aloud. Settings are remembered in this browser only.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 const KEY = 'earthset.a11y';
 const DEF = { size: 0, contrast: false, cb: false, motion: matchMedia('(prefers-reduced-motion: reduce)').matches, spacing: false, speak: false };
 export const a11y = (() => { try { return { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) { return { ...DEF }; } })();

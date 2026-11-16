@@ -8,7 +8,6 @@
 // r pixels through passable ground; each step costs a tiny penalty so it does not
 // wander without reason. We keep, for every pixel, the best total sunlight of any
 // route that ends there, and where that route came from, then trace back the best.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 export function sunRoute(F, T, N, res, H, start, o = {}) {
   const px = N * N, speed = o.speed || 100, dtH = o.dtH || 6, maxSlope = Math.tan((o.maxSlopeDeg || 20) * Math.PI / 180);

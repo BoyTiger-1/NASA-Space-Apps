@@ -1,5 +1,4 @@
-"""Renders shaded-relief basemaps from NASA LOLA topography for the app.
-SI disclosure: written with the assistance of an SI coding tool (Claude)."""
+"""Renders shaded-relief basemaps from NASA LOLA topography for the app."""
 import os, numpy as np
 from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

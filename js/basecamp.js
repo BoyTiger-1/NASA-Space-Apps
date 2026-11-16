@@ -2,7 +2,6 @@
 // pixel around a site, find the best places for a long-stay base: lit and in view of
 // Earth at the same time as often as possible, on gentle slopes, and a short drive
 // from ground that stayed dark all year (where water ice can survive).
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 export function findBaseCamps(r, o = {}) {
   const { N, res, both, lit, comm, h, maxLit } = r, px = N * N;

@@ -4,7 +4,6 @@
 // Almanac (about 0.3 deg in longitude, 0.2 deg in latitude), which moves a
 // station's moonrise or moonset by a minute or two. This is geometry only,
 // not a DSN schedule.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 const D2R = Math.PI / 180, R2D = 180 / Math.PI;
 const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);

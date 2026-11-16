@@ -1,5 +1,4 @@
 // Loads full-resolution LOLA rasters from raw/lola for precomputation (Node).
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

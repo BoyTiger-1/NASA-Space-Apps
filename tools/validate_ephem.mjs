@@ -1,6 +1,5 @@
 // Validates js/ephem.js against the NASA/JPL Horizons API (the challenge's
 // reference tool). Writes data/validation.json, which the app displays.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

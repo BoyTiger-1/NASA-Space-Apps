@@ -7,8 +7,6 @@ frame LOLA topography uses). Source: NASA/JPL DE440 + lunar PCK via SPICE.
 
 Output: data/ephem.bin (Float32, little endian) and data/ephem.json (header).
 
-SI disclosure: this file was written with the assistance of an SI coding tool
-(Claude). Reviewed and run by team members.
 """
 import json, os, sys
 import numpy as np
@@ -59,7 +57,7 @@ out = os.path.join(ROOT, "data")
 os.makedirs(out, exist_ok=True)
 coef.astype("<f4").tofile(os.path.join(out, "ephem.bin"))
 hdr = {
-    "generator": "tools/build_ephem.py (SI-assisted code)",
+    "generator": "tools/build_ephem.py",
     "source": "NASA/JPL DE440 (de440s.bsp), moon_pa_de440_200625.bpc, moon_de440_250416.tf via SPICE",
     "frame": "MOON_ME (mean Earth / polar axis), km",
     "correction": "LT+S, observer = Moon centre",

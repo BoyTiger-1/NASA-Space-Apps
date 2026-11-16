@@ -1,5 +1,4 @@
 // Earthset: mission-window analysis (shared by the app, the worker and Node tests).
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { azel, makeSite, R_SUN, R_EARTH } from './ephem.js';
 import { discVisible } from './terrain.js';
 

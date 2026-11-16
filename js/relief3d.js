@@ -1,7 +1,6 @@
 // Earthset: 3D relief view of the shadow map. Plain WebGL, no libraries.
 // The terrain block is drawn at true vertical scale times a user-set
 // exaggeration, textured with the same lit/shadow image as the flat map.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 const VS = `
 attribute vec3 a;

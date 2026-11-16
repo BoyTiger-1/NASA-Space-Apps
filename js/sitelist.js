@@ -1,6 +1,5 @@
 // Curated landing sites. Coordinates: planetocentric lat, east-positive lon (deg), MOON_ME.
 // `src` records where each coordinate came from; `approx` marks illustrative points.
-// SI disclosure: compiled with the assistance of an SI coding tool (Claude); sources listed per entry.
 export const SITES = [
   // --- South pole: future / candidate ---
   { id: 'ridge', name: 'Shackleton–de Gerlache Connecting Ridge', group: 'South Pole', lat: -89.4519, lon: -137.123, note: 'Best-lit point Earthset found within 800 m of the highly illuminated site reported by Mazarico et al. 2011 (89.45°S 222.69°E). Moving just 80 m changes long-term sunlight from ~64% to ~86%.', src: 'Mazarico et al. 2011, Icarus 211' },

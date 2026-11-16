@@ -2,7 +2,6 @@
 // Evaluates Chebyshev fits of NASA/JPL DE440 (see tools/build_ephem.py) to get
 // the apparent Sun and Earth vectors in the lunar Mean-Earth body-fixed frame,
 // then converts them to azimuth/elevation at a surface site.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 export const R_MOON = 1737.4;            // km, LOLA / IAU reference sphere
 export const R_SUN = 695700.0;           // km (IAU nominal solar radius)

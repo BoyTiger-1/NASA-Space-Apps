@@ -22,6 +22,46 @@ The site has two pages: **`index.html`** is the website (what it is, why it matt
 and **`app.html`** is the planner itself. All the numbers are computed in the browser from NASA data; no
 login is needed. The only server piece is optional: an AI helper for the Ask bar (see below).
 
+## NASA Space Apps Challenge submission
+
+**Project:** Earthset: Lunar Landing Window Navigator
+**Challenge:** 2026 NASA Space Apps Challenge, Lunar Landing Site Navigator
+**Website:** https://boytiger-1.github.io/NASA-Space-Apps/
+**Seven-slide demo:** https://boytiger-1.github.io/NASA-Space-Apps/demo/
+**Source code:** https://github.com/BoyTiger-1/NASA-Space-Apps
+
+Earthset helps mission planners, students and the public see whether a lunar lander will have sunlight and
+a direct radio link to Earth at a given site and date, and what options remain when a launch slips. At the
+Moon's south pole, the Sun stays close to the horizon, so small changes in terrain can make a large difference.
+
+### Project capabilities
+
+- Compare up to four Apollo, CLPS, international and south-pole candidate sites, or choose a custom location
+  from the map or by entering coordinates.
+- Explore a 360° terrain-horizon sky view, the Sun and Earth's paths, true-scale views of the Sun and Earth,
+  and countdowns to sunrise, sunset, Earthrise and Earthset.
+- Review sunlight, Earth-link time, longest darkness and link outage, and adjustable GO / MARGINAL / NO-GO
+  rules; animate the mission and inspect hourly conditions.
+- Compare launch dates with the landing-window calendar, rank sites by available GO days and view each plan's
+  launch-slip margin.
+- Recover from a broken plan by searching for the next GO date, ranking alternative sites and testing 121 nearby
+  LOLA-grid locations.
+- Explore terrain shadows live or averaged over a mission, view Earth visibility, and select map pixels as sites;
+  optionally orbit the terrain in 3D.
+- Estimate battery survival using configurable solar-array, load and battery values.
+- Find candidate long-stay base-camp areas with sunlight, Earth visibility, gentle slopes and proximity to
+  permanently shadowed ground.
+- Plan a rover route that maximizes sunlight while avoiding steep slopes, and compare it with remaining parked.
+- Use the live Shackleton–de Gerlache ridge view, play a 30-day lunar-month time-lapse, or check whether a
+  selected city and the ridge can see the Moon/Earth at the same time.
+- Re-run recent mission scenarios, inspect eclipses, and check current Sun/Earth positions live against
+  NASA/JPL Horizons.
+- Ask questions in plain English, download mission calendars, export CSV data, share scenarios, save a PNG
+  mission card or print a PDF brief.
+- Use Explorer or Planner mode, a guided tour, and accessibility settings including text scaling, high contrast,
+  reduced motion, read-aloud answers, keyboard navigation and chart descriptions.
+- Open the free teacher page with three printable activities for grades 6–12, answer keys and NGSS connections.
+
 ## What makes the numbers trustworthy
 
 | Check | Result |
@@ -40,7 +80,7 @@ Reproduce: `node tools/test.mjs`, `node tools/validate_ephem.mjs`, `node tools/c
 
 Type a scenario such as "Apollo 17 and IM-2 on 3 March for 10 days" or "best south pole site if we slip
 30 days". Earthset sets the sites, date, mission length and slip, then shows the verdict. It works offline;
-an optional Gemini key (see Use of SI tools) lets it read looser questions and add a short spoken-style summary.
+an optional Gemini key lets it read looser questions and add a short spoken-style summary.
 
 ## How it works
 
@@ -100,27 +140,40 @@ node tools/validate_ephem.mjs
 - The shadow map considers terrain within 150 km and approximates partial sunlight linearly across the Sun's disc.
 - The live view at the top uses real positions and a real LOLA horizon, but stretches elevation relative to azimuth (the factor is printed on it).
 - Ground-station rows are geometry only (Moon above 10°), not a DSN schedule.
-- Custom sites and the nearby search use reduced-resolution terrain; treat them as screening.
+- Custom sites, the nearby search and the shadow map use reduced-resolution terrain; treat them as screening.
 - LOLA grids contain interpolated gaps, especially away from the poles.
 - Some South Pole entries are illustrative points inside NASA's Artemis III candidate regions; NASA has not published site coordinates. These are labelled in the app.
+
+## Benefits and next steps
+
+Recent landers including SLIM, IM-1 and IM-2 faced power loss or early mission endings related to lighting
+and lander orientation. Earthset makes site/date tradeoffs and launch-slip alternatives easier to compare,
+while helping students and the public understand the lunar south pole environment. Potential extensions include
+full-resolution terrain for every custom site, relay-satellite links, thermal limits and rover traverses between
+lit areas.
 
 ## Data and references
 
 - NASA/JPL Horizons System: https://ssd.jpl.nasa.gov/horizons/ (validation reference)
-- NASA/JPL NAIF generic kernels: de440s.bsp, moon_pa_de440_200625.bpc, moon_de440_250416.tf, pck00011.tpc, naif0012.tls
-- NASA LRO LOLA Gridded Data Records, PDS Geosciences Node: LDEM_875S_20M, LDEM_85S_40M, LDEM_80S_80M, LDEM_75S_120M, LDEM_75N_120M, LDEM_64, LDEM_16
+- NASA/JPL NAIF generic kernels: https://naif.jpl.nasa.gov/naif/data_generic.html (de440s.bsp, moon_pa_de440_200625.bpc, moon_de440_250416.tf, pck00011.tpc, naif0012.tls)
+- NASA LRO LOLA Gridded Data Records, PDS Geosciences Node: https://pds-geosciences.wustl.edu/missions/lro/lola.htm (LDEM_875S_20M, LDEM_85S_40M, LDEM_80S_80M, LDEM_75S_120M, LDEM_75N_120M, LDEM_64, LDEM_16)
 - Mazarico et al. (2011), *Illumination conditions of the lunar polar regions using LOLA topography*, Icarus 211, 1066–1081
 - Landing-site coordinates: NASA NSSDCA, LROC (ASU), ISRO (Chandrayaan-3), JAXA (SLIM), IAU Gazetteer of Planetary Nomenclature
+- Challenge resources: LROC Quickmap (https://quickmap.lroc.asu.edu/) and NASA Moon Trek (https://trek.nasa.gov/moon/)
 - Blue Ghost Mission 1 event times: Firefly Aerospace / NASA mission updates (March 2025)
+- Mission reporting used for website comparisons: JAXA and NASASpaceflight on SLIM (2024); Spaceflight Now on IM-2 Athena (2025); Universe Today on IM-1 Odysseus (2024)
+- Other references: NASA's "VIPER rover will get driving headlights" (Mark Shirley, NASA Ames); FOX Weather on Intuitive Machines' IM-2 statement (March 2025); IAU Gazetteer of Planetary Nomenclature (USGS)
+- Deep Space Network locations: NASA/JPL; low-precision lunar position series: *The Astronomical Almanac*
 - Libraries: SPICE Toolkit via `spiceypy`, NumPy, Pillow (data preparation only). The web app has no third-party dependencies.
 
-## Use of SI tools
+## Development and testing tools
 
-The source code, data-processing scripts, interface text and this README were written with the assistance of an
-SI coding tool (Anthropic's Claude), which also helped shape the concept; the team directed, ran and reviewed
-the work. Every number the app shows is computed from the NASA data above, not generated by SI. No SI-generated
-images, video or audio are used: map imagery is rendered directly from LOLA elevation data. Each source file
-carries an SI-disclosure comment. No NASA logos, flags or mission identifiers are used.
+Claude was used primarily for frontend development and also for testing. Manus was also used for testing; its
+Linux environment allowed it to interact with the website like a real user. The project uses JavaScript
+(ES modules, Canvas, WebGL and Web Workers), HTML, CSS, Python (NumPy, spiceypy, Pillow) and Node.js. Google
+Chrome was used for testing; GitHub Pages hosts the website. Google Gemini is an optional runtime assistant
+in the Ask bar; it interprets questions and summarizes numbers Earthset has already computed. No NASA logos,
+flags or mission identifiers are used.
 
 The optional assistant in the "Ask" bar (`js/ai.js`) calls Google Gemini at runtime, only when a visitor
 pastes their own Gemini API key under **More → AI assistant**. The key is stored in that browser's local

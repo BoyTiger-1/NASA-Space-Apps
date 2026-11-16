@@ -1,5 +1,5 @@
 {
- "generator": "tools/build_ephem.py (SI-assisted code)",
+ "generator": "tools/build_ephem.py",
  "source": "NASA/JPL DE440 (de440s.bsp), moon_pa_de440_200625.bpc, moon_de440_250416.tf via SPICE",
  "frame": "MOON_ME (mean Earth / polar axis), km",
  "correction": "LT+S, observer = Moon centre",

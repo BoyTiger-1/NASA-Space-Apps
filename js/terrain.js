@@ -2,7 +2,6 @@
 // the browser / Web Worker for custom sites).
 // Topography: NASA LRO Lunar Orbiter Laser Altimeter (LOLA) gridded radius
 // products, heights in metres relative to the 1737.4 km reference sphere.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 import { R_MOON } from './ephem.js';
 const RM = R_MOON * 1000;                 // metres

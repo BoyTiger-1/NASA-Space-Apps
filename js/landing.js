@@ -1,5 +1,4 @@
 // Earthset: landing page. Draws the live sky in the hero; everything else is static.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { loadEphemeris } from './ephem.js';
 import { startHero, prepSite } from './hero.js';
 import { liveCheck, liveCheckHtml } from './livecheck.js';

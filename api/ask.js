@@ -2,7 +2,6 @@
 // The Gemini key lives in the GEMINI_API_KEY environment variable on Vercel and
 // never reaches the browser. The endpoint only accepts Earthset's two request
 // types with size limits, so it cannot be used as a general chatbot proxy.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { SITES } from '../js/sitelist.js';
 import { PARSE_SCHEMA, parsePrompt, explainPrompt, gemini } from '../js/ai-prompts.js';
 

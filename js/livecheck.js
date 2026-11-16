@@ -1,7 +1,6 @@
 // Earthset: "check it live" against NASA/JPL Horizons. Asks Horizons (through the
 // /api/horizons function) where the Sun and Earth are right now from a lunar site,
 // computes the same thing with Earthset's own ephemeris, and shows the difference.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { makeSite, azel } from './ephem.js';
 
 const pad = (n) => String(n).padStart(2, '0');

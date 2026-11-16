@@ -1,6 +1,5 @@
 // Earthset: prompts for the optional Gemini assistant, shared by the browser
 // (visitor's own key) and the Vercel function in /api/ask.js (key kept on the server).
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 
 export const MODELS = ['gemini-2.5-flash', 'gemini-3.1-flash-lite'];
 

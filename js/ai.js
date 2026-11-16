@@ -7,7 +7,6 @@
 // Without either, Earthset uses its offline parser. All numbers shown come from
 // Earthset's own NASA-data calculations; the model only (1) turns a question into
 // settings and (2) words a short summary of numbers we hand it.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { PARSE_SCHEMA, parsePrompt, explainPrompt, gemini } from './ai-prompts.js';
 
 const STORE = 'earthset.aikey';

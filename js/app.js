@@ -1,5 +1,4 @@
 // Earthset: application UI.
-// SI disclosure: written with the assistance of an SI coding tool (Claude).
 import { loadEphemeris, makeSite, azel, subPoint, R_SUN, R_EARTH, R_MOON } from './ephem.js';
 import { horizonAt, discVisible, offsetLL } from './terrain.js';
 import { STATIONS, MASK_DEG, stationsInView } from './earthside.js';
